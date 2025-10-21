@@ -10,4 +10,4 @@ class LLMType(Enum):
     VECTOR_DB_SEARCH_AGENT = "vector_db_search_agent"
     RESPONSE_GENERATION_AGENT = "response_generation_agent"
     SESSION_MEMORY_AGENT = "session_memory_agent"
-    
+

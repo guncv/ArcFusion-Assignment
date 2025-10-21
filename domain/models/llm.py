@@ -1,11 +1,10 @@
 from pydantic import BaseModel
 
-
 class HealthCheckResp(BaseModel):
     status: str
 
-class CheckWorkflowReq(BaseModel):
+class LLMRequest(BaseModel):
     user_input: str
 
-class CheckWorkflowResp(BaseModel):
+class LLMResponse(BaseModel):
     message: str
