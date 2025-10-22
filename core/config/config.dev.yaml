@@ -1,5 +1,5 @@
 router_agent:
-  model: gpt-3.5-turbo
+  model: gpt-4o-mini
   api_provider: openai
   temperature: 0.0
   api_key: ${OPENAI_API_KEY}
@@ -10,7 +10,21 @@ smalltalk_agent:
   api_provider: openai
   temperature: 0.5
   api_key: ${OPENAI_API_KEY}
-  max_tokens: 1000
+  max_tokens: 500
+
+clarification_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+needs_more_detail_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.5
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
 
 tools:
   enabled: true
@@ -41,3 +55,7 @@ vector_db:
 logging:
   level: "DEBUG"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+chat_history:
+  persist_dir: "./data/chat_history"
+  auto_save: true

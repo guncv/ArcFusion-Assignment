@@ -11,7 +11,7 @@ from domain.enums.error_code import ArcFusionErrorCodes
 from pydantic import BaseModel, Field
 
 class RoutingDecisionInput(BaseModel):
-    decision: str = Field(description="The routing decision: 'clear_question' or 'ambiguous' or 'smalltalk'")
+    decision: str = Field(description="The routing decision: 'clear_question' or 'ambiguous'")
 
 @tool(args_schema=RoutingDecisionInput)
 def finalize_routing(decision: str) -> str:
@@ -20,20 +20,17 @@ def finalize_routing(decision: str) -> str:
     Use this tool to submit your final routing decision.
 
     Args:
-        decision: The final routing decision ('clear_question' or 'ambiguous' or 'smalltalk').
+        decision: The final routing decision ('clear_question' or 'ambiguous').
 
     Returns:
         str: Confirmation of the finalized decision.
     """
     cleaned_decision = decision.strip().lower()
-    valid_decisions = [RoutingDecision.CLEAR_QUESTION.value, RoutingDecision.AMBIGUOUS.value, RoutingDecision.SMALLTALK.value]
+    valid_decisions = [RoutingDecision.CLEAR_QUESTION.value, RoutingDecision.AMBIGUOUS.value]
 
     if cleaned_decision not in valid_decisions:
         logger.error(f"[Tool - finalize_routing] Attempted to finalize invalid decision: {decision}")
-        return (
-            f"ERROR: Cannot finalize invalid decision '{decision}'. "
-            "Must be 'clear_question' or 'ambiguous' or 'smalltalk'."
-        )
+        return "invalid_decision"
 
     logger.info(f"[Tool - finalize_routing] Finalized routing decision: {cleaned_decision}")
     return cleaned_decision
@@ -98,7 +95,6 @@ class RouterAgent:
             if decision not in [
                 RoutingDecision.CLEAR_QUESTION.value,
                 RoutingDecision.AMBIGUOUS.value,
-                RoutingDecision.SMALLTALK.value,
             ]:
                 logger.warning(f"[RouterAgent] Unexpected output: {decision} → fallback to 'ambiguous'")
                 decision = RoutingDecision.AMBIGUOUS.value
