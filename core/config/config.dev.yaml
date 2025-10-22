@@ -2,8 +2,15 @@ router_agent:
   model: gpt-3.5-turbo
   api_provider: openai
   temperature: 0.0
-  api_key: ${ROUTER_AGENT_OPENAI_API_KEY}
-  max_tokens: 500
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 100
+
+smalltalk_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.5
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 1000
 
 tools:
   enabled: true

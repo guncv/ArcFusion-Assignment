@@ -4,6 +4,7 @@ from typing import TypedDict, Optional
 class RoutingDecision(Enum):
     CLEAR_QUESTION = "clear_question"
     AMBIGUOUS = "ambiguous"
+    SMALLTALK = "smalltalk"
     
 class WorkflowState(TypedDict, total=False):
     user_query: str

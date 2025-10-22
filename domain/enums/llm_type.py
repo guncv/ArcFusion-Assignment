@@ -2,6 +2,7 @@ from enum import Enum
 
 class LLMType(Enum):
     ROUTER_AGENT = "router_agent"
+    SMALLTALK_AGENT = "smalltalk_agent"
     CLARIFICATION_AGENT = "clarification_agent"
     INTENT_ANALYSIS_AGENT = "intent_analysis_agent"
     RAG_RETRIEVAL_AGENT = "rag_retrieval_agent"

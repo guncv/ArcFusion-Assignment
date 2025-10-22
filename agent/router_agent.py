@@ -11,7 +11,7 @@ from domain.enums.error_code import ArcFusionErrorCodes
 from pydantic import BaseModel, Field
 
 class RoutingDecisionInput(BaseModel):
-    decision: str = Field(description="The routing decision: 'clear_question' or 'ambiguous'")
+    decision: str = Field(description="The routing decision: 'clear_question' or 'ambiguous' or 'smalltalk'")
 
 @tool(args_schema=RoutingDecisionInput)
 def finalize_routing(decision: str) -> str:
@@ -20,19 +20,19 @@ def finalize_routing(decision: str) -> str:
     Use this tool to submit your final routing decision.
 
     Args:
-        decision: The final routing decision ('clear_question' or 'ambiguous').
+        decision: The final routing decision ('clear_question' or 'ambiguous' or 'smalltalk').
 
     Returns:
         str: Confirmation of the finalized decision.
     """
     cleaned_decision = decision.strip().lower()
-    valid_decisions = [RoutingDecision.CLEAR_QUESTION.value, RoutingDecision.AMBIGUOUS.value]
+    valid_decisions = [RoutingDecision.CLEAR_QUESTION.value, RoutingDecision.AMBIGUOUS.value, RoutingDecision.SMALLTALK.value]
 
     if cleaned_decision not in valid_decisions:
         logger.error(f"[Tool - finalize_routing] Attempted to finalize invalid decision: {decision}")
         return (
             f"ERROR: Cannot finalize invalid decision '{decision}'. "
-            "Must be 'clear_question' or 'ambiguous'."
+            "Must be 'clear_question' or 'ambiguous' or 'smalltalk'."
         )
 
     logger.info(f"[Tool - finalize_routing] Finalized routing decision: {cleaned_decision}")
@@ -47,6 +47,7 @@ class RouterAgent:
             tools=self.tools,
             system_prompt=ROUTER_AGENT_PROMPT
         )
+        
         self.output_parser = StrOutputParser()
 
     async def invoke(self, state: WorkflowState) -> WorkflowState:
@@ -97,6 +98,7 @@ class RouterAgent:
             if decision not in [
                 RoutingDecision.CLEAR_QUESTION.value,
                 RoutingDecision.AMBIGUOUS.value,
+                RoutingDecision.SMALLTALK.value,
             ]:
                 logger.warning(f"[RouterAgent] Unexpected output: {decision} → fallback to 'ambiguous'")
                 decision = RoutingDecision.AMBIGUOUS.value
