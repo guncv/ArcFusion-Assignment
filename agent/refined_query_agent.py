@@ -8,7 +8,7 @@ from domain.enums.error_code import ArcFusionErrorCodes
 from langchain_core.output_parsers import StrOutputParser
 from prompts.refined_agent_prompt import REFINED_QUERY_AGENT_PROMPT
 
-class RefinedAgent:
+class RefinedQueryAgent:
     def __init__(self):
         self.llm = loadLLM(LLMType.REFINED_QUERY_AGENT)
         self.chain = REFINED_QUERY_AGENT_PROMPT | self.llm | StrOutputParser()
@@ -16,26 +16,20 @@ class RefinedAgent:
     async def invoke(self, state: WorkflowState) -> WorkflowState:
         try:
             user_query = state.get("user_query", "")
+            session_id = state.get("session_id", "")
 
-            chat_history = getChatHistory(state.get("session_id", ""))
-            has_history = len(chat_history.messages) > 0
-
-            if not has_history:
-                response = await self.chain.ainvoke(user_query)
-                return {
-                    **state,
-                    "response": response,
-                    "routing_decision": END,
-                }
-            else:
-                response = "This clarification agent should only be used when there's no conversation history."
-                logger.warning(f"[ClarificationAgent] Agent invoked with existing history - this should not happen")
-                return {
-                    **state,
-                    "response": "This clarification agent should only be used when there's no conversation history.",
-                    "routing_decision": END,
-                }
-
+            chat_history = getChatHistory(session_id)
+            response = await self.chain.ainvoke({
+                "user_query": user_query,
+                "history": chat_history.messages
+            })
+            
+            logger.info(f"[RefinedQueryAgent] Response: {response}")
+            
+            return {
+                **state,
+                "user_query": response,
+            }
         except Exception as e:
             logger.error(f"[ClarificationAgent] Error during invoke: {e}", exc_info=True)
             raise ArcFusionException(

@@ -1,5 +1,5 @@
 router_agent:
-  model: gpt-4o-mini
+  model: gpt-3.5-turbo
   api_provider: openai
   temperature: 0.0
   api_key: ${OPENAI_API_KEY}
@@ -25,6 +25,13 @@ needs_more_detail_agent:
   temperature: 0.5
   api_key: ${OPENAI_API_KEY}
   max_tokens: 500
+
+refined_query_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 1000
 
 tools:
   enabled: true

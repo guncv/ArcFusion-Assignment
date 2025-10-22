@@ -7,7 +7,7 @@ from agent.small_talk import SmallTalkAgent
 from agent.clarification_agent import ClarificationAgent
 from agent.more_detail_agent import MoreDetailAgent
 from infrastructure.llm.loader import getChatHistory
-
+from agent.refined_query_agent import RefinedQueryAgent
 class WorkflowGraph:
     
     def __init__(self):
@@ -16,6 +16,7 @@ class WorkflowGraph:
             LLMType.SMALLTALK_AGENT.value: SmallTalkAgent(),
             LLMType.CLARIFICATION_AGENT.value: ClarificationAgent(),
             LLMType.NEEDS_MORE_DETAIL_AGENT.value: MoreDetailAgent(),
+            LLMType.REFINED_QUERY_AGENT.value: RefinedQueryAgent(),
         }
         self.graph = self._build_graph()
 
@@ -101,7 +102,8 @@ class WorkflowGraph:
 
     async def _refined_query_agent(self, state: WorkflowState) -> WorkflowState:
         logger.info(f"[RefinedQueryAgent] Called")
-        return state
+        resp = await self.agents[LLMType.REFINED_QUERY_AGENT.value].invoke(state)
+        return resp
 
     async def invoke(self, user_input: str, session_id: str) -> WorkflowState:
         initial_state: WorkflowState = {
@@ -109,20 +111,15 @@ class WorkflowGraph:
             "session_id": session_id
         }
 
-        # Get chat history and save user message
         chat_history = getChatHistory(session_id)
         chat_history.add_user_message(user_input)
-        logger.info(f"[WorkflowGraph] Saved user message to chat history")
 
         try:
             result = await self.graph.ainvoke(initial_state)
-            logger.info("Workflow completed successfully")
 
-            # Save AI response to chat history
             ai_response = result.get("response", "")
             if ai_response:
                 chat_history.add_ai_message(ai_response)
-                logger.info(f"[WorkflowGraph] Saved AI response to chat history")
             return result
         except Exception as e:
             logger.error(f"Workflow error: {e}", exc_info=True)
