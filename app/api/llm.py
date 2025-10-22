@@ -31,8 +31,8 @@ async def llm_api(req: LLMRequest) -> LLMResponse:
         logger.error(f"[LLM API Error]: {e}")
         e.raise_HTTPException()
 
-@router.post("/clear-history", response_model=ClearHistoryResponse)
-async def clear_history_api() -> ClearHistoryResponse:
+@router.post("/clear-history")
+async def clear_history_api():
     try:
         resp = await llm_service.clear_chat_history()
         return resp

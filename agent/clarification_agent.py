@@ -42,11 +42,10 @@ def finalize_clarification_routing(decision: str) -> str:
 
 class ClarificationAgent:
     def __init__(self):
-        self.llm = loadLLM(LLMType.CLARIFICATION_AGENT)
-
+        self.base_llm = loadLLM(LLMType.CLARIFICATION_AGENT)
         self.routing_tools = [finalize_clarification_routing]
         self.routing_agent = create_agent(
-            model=self.llm,
+            model=self.base_llm,
             tools=self.routing_tools,
             system_prompt=CLARIFICATION_ROUTING_PROMPT
         )
@@ -55,73 +54,60 @@ class ClarificationAgent:
         try:
             user_query = state.get("user_query", "")
             session_id = state.get("session_id", "")
-
-            logger.info(f"[ClarificationAgent] Session ID: {session_id}")
+            
+            # Get chat history for context
             chat_history = getChatHistory(session_id)
-            logger.info(f"[ClarificationAgent] Chat history message count: {len(chat_history.messages)}")
-
-            # Format chat history for the routing agent (if any)
-            history_str = ""
-            if len(chat_history.messages) > 0:
-                history_str = "\n".join([
-                    f"{msg.type}: {msg.content}"
-                    for msg in chat_history.messages[-5:]  # Last 5 messages for context
-                ])
-                logger.info(f"[ClarificationAgent] Including chat history in routing decision")
-            else:
-                logger.info(f"[ClarificationAgent] No chat history available")
-
-            # Always use the routing agent to classify the query
-            agent_input = {
-                "messages": [{
-                    "role": "user",
-                    "content": f"Chat History:\n{history_str if history_str else '[]'}\n\nUser query: {user_query}"
-                }]
-            }
-
-            agent_response = await self.routing_agent.ainvoke(agent_input)
-            logger.info(f"[ClarificationAgent] Routing agent response: {agent_response}")
-
-            # Extract decision from agent response
-            messages = agent_response.get("messages", [])
-            decision = None
-
-            # Search for decision in tool messages
+            history_messages = chat_history.messages
+            
+            # Build messages list with history + current query
+            messages = []
+            
+            # Add chat history
+            for msg in history_messages:
+                if hasattr(msg, 'type'):
+                    if msg.type == 'human':
+                        messages.append({"role": "user", "content": msg.content})
+                    elif msg.type == 'ai':
+                        messages.append({"role": "assistant", "content": msg.content})
+            
+            # Add current user query
+            messages.append({"role": "user", "content": user_query})
+            
+            response = await self.routing_agent.ainvoke({"messages": messages})
+            
+            # Extract the routing decision from tool calls
+            messages = response.get("messages", [])
+            routing_decision = None
+            
+            # Look for tool calls in the messages
             for msg in reversed(messages):
-                # Check ToolMessage
-                if msg.__class__.__name__ == "ToolMessage":
-                    decision = getattr(msg, "content", None)
-                    if decision:
-                        logger.info(f"[ClarificationAgent] Found decision in ToolMessage: {decision}")
-                        break
-
-                # Check AIMessage with tool calls
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
                     for tool_call in msg.tool_calls:
                         if tool_call.get("name") == "finalize_clarification_routing":
                             args = tool_call.get("args", {})
-                            decision = args.get("decision")
-                            if decision:
-                                logger.info(f"[ClarificationAgent] Found decision in tool_call args: {decision}")
+                            routing_decision = args.get("decision")
+                            if routing_decision:
                                 break
-                    if decision:
+                    if routing_decision:
                         break
-
-            # Fallback to last message content
-            if not decision:
+                
+                # Also check for ToolMessage with the decision
+                if hasattr(msg, "name") and msg.name == "finalize_clarification_routing":
+                    routing_decision = msg.content
+                    break
+            
+            # Fallback to last message content if no tool call found
+            if not routing_decision:
                 last_message = messages[-1] if messages else None
                 if last_message and hasattr(last_message, "content"):
-                    decision = getattr(last_message, "content", "").strip()
-                    logger.warning(f"[ClarificationAgent] No tool call found, using last message content: {decision}")
-
-            # Validate and normalize decision
-            if decision:
-                decision = str(decision).strip().lower()
-
+                    routing_decision = last_message.content
+            
+            logger.info(f"[ClarificationAgent] Routing decision: {routing_decision}")
+            
             return {
                 **state,
-                "routing_decision": decision,
-                "response": decision,
+                "routing_decision": routing_decision,
+                "response": f"Routing decision: {routing_decision}",
             }
 
         except Exception as e:
@@ -130,3 +116,4 @@ class ClarificationAgent:
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"ClarificationAgent error: [{type(e).__name__}]: {str(e)}",
             )
+

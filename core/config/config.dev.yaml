@@ -57,5 +57,17 @@ logging:
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 chat_history:
-  persist_dir: "./data/chat_history"
-  auto_save: true
+  backend: "redis"  # Options: redis, postgres, file
+  ttl: 3600  # Session TTL in seconds (1 hour)
+
+  # Redis configuration
+  redis:
+    host: "${REDIS_HOST:localhost}"
+    port: "${REDIS_PORT:6379}"
+    db: "${REDIS_DB:0}"
+    password: "${REDIS_PASSWORD:}"
+    key_prefix: "chat_history:"
+
+  # Fallback file storage (dev only)
+  file:
+    persist_dir: "./data/chat_history"

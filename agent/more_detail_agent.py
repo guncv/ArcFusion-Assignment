@@ -16,30 +16,14 @@ class MoreDetailAgent:
         try:
             user_query = state.get("user_query", "")
             session_id = state.get("session_id", "")
-
-            logger.info(f"[MoreDetailAgent] Session ID: {session_id}")
+            
             chat_history = getChatHistory(session_id)
-            logger.info(f"[MoreDetailAgent] Chat history message count: {len(chat_history.messages)}")
-
-            # Format chat history for the prompt
-            history_str = ""
-            if len(chat_history.messages) > 0:
-                history_str = "\n".join([
-                    f"{msg.type}: {msg.content}"
-                    for msg in chat_history.messages[-5:]  # Last 5 messages for context
-                ])
-                logger.info(f"[MoreDetailAgent] Including chat history in clarification")
-            else:
-                logger.info(f"[MoreDetailAgent] No chat history available")
-                history_str = "No previous conversation history."
-
+            
+            # Invoke chain with history
             response = await self.chain.ainvoke({
-                "user_query": user_query,
-                "chat_history": history_str
+                "input": user_query,
+                "history": chat_history.messages
             })
-
-            logger.info(f"[MoreDetailAgent] User query: {user_query}")
-            logger.info(f"[MoreDetailAgent] Agent response: {response}")
 
             return {
                 **state,

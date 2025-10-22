@@ -5,7 +5,6 @@ from infrastructure.llm.loader import loadLLM
 from domain.enums.llm_type import LLMType
 from langchain_core.tools import tool
 from langchain.agents import create_agent
-from langchain_core.output_parsers import StrOutputParser
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
 from pydantic import BaseModel, Field
@@ -32,7 +31,6 @@ def finalize_routing(decision: str) -> str:
         logger.error(f"[Tool - finalize_routing] Attempted to finalize invalid decision: {decision}")
         return "invalid_decision"
 
-    logger.info(f"[Tool - finalize_routing] Finalized routing decision: {cleaned_decision}")
     return cleaned_decision
 
 class RouterAgent:
@@ -44,8 +42,6 @@ class RouterAgent:
             tools=self.tools,
             system_prompt=ROUTER_AGENT_PROMPT
         )
-        
-        self.output_parser = StrOutputParser()
 
     async def invoke(self, state: WorkflowState) -> WorkflowState:
         try:
@@ -54,7 +50,6 @@ class RouterAgent:
             # Step 1: Run the agent
             agent_input = {"messages": [{"role": "user", "content": user_query}]}
             agent_response = await self.agent.ainvoke(agent_input)
-            logger.info(f"[RouterAgent] Agent response: {agent_response}")
 
             # Step 2: Extract messages and initialize decision
             messages = agent_response.get("messages", [])
@@ -66,7 +61,6 @@ class RouterAgent:
                 if msg.__class__.__name__ == "ToolMessage":
                     decision = getattr(msg, "content", None)
                     if decision:
-                        logger.info(f"[RouterAgent] Found decision in ToolMessage: {decision}")
                         break
 
                 # 3.2 If it's an AIMessage that triggered tool calls
@@ -76,7 +70,6 @@ class RouterAgent:
                             args = tool_call.get("args", {})
                             decision = args.get("decision")
                             if decision:
-                                logger.info(f"[RouterAgent] Found decision in tool_call args: {decision}")
                                 break
                     if decision:
                         break

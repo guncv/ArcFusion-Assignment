@@ -6,7 +6,7 @@ from domain.enums.llm_type import LLMType
 from agent.small_talk import SmallTalkAgent
 from agent.clarification_agent import ClarificationAgent
 from agent.more_detail_agent import MoreDetailAgent
-from agent.refined_agent import RefinedAgent
+from infrastructure.llm.loader import getChatHistory
 
 class WorkflowGraph:
     
@@ -61,7 +61,6 @@ class WorkflowGraph:
     
     def _route_after_router(self, state: WorkflowState) -> str:
         routing_decision = state.get("routing_decision", "")
-        logger.info(f"[WorkflowGraph] Router decision: {routing_decision}")
 
         if routing_decision == RoutingDecision.CLEAR_QUESTION.value:
             return LLMType.INTENT_ANALYSIS_AGENT.value
@@ -76,42 +75,54 @@ class WorkflowGraph:
         else:
             return END
 
-
     async def _router_agent(self, state: WorkflowState) -> WorkflowState:
+        logger.info(f"[RouterAgent] Called")
         resp = await self.agents[LLMType.ROUTER_AGENT.value].invoke(state)
         return resp
     
     async def _smalltalk_agent(self, state: WorkflowState) -> WorkflowState:
+        logger.info(f"[SmallTalkAgent] Called")
         resp = await self.agents[LLMType.SMALLTALK_AGENT.value].invoke(state)
         return resp
     
     async def _intent_analysis_agent(self, state: WorkflowState) -> WorkflowState:
-        logger.info(f"Intent analysis agent called with state: {state}")
+        logger.info(f"[IntentAnalysisAgent] Called")
         return state
     
     async def _clarification_agent(self, state: WorkflowState) -> WorkflowState:
+        logger.info(f"[ClarificationAgent] Called")
         resp = await self.agents[LLMType.CLARIFICATION_AGENT.value].invoke(state)
         return resp
     
     async def _needs_more_detail_agent(self, state: WorkflowState) -> WorkflowState:
+        logger.info(f"[NeedsMoreDetailAgent] Called")
         resp = await self.agents[LLMType.NEEDS_MORE_DETAIL_AGENT.value].invoke(state)
         return resp
 
     async def _refined_query_agent(self, state: WorkflowState) -> WorkflowState:
-        logger.info(f"Refined query agent called with state: {state}")
+        logger.info(f"[RefinedQueryAgent] Called")
         return state
 
     async def invoke(self, user_input: str, session_id: str) -> WorkflowState:
-        logger.info(f"Invoking workflow with input: {user_input}, session_id: {session_id}")
-
         initial_state: WorkflowState = {
             "user_query": user_input,
             "session_id": session_id
         }
 
+        # Get chat history and save user message
+        chat_history = getChatHistory(session_id)
+        chat_history.add_user_message(user_input)
+        logger.info(f"[WorkflowGraph] Saved user message to chat history")
+
         try:
             result = await self.graph.ainvoke(initial_state)
             logger.info("Workflow completed successfully")
+
+            # Save AI response to chat history
+            ai_response = result.get("response", "")
+            if ai_response:
+                chat_history.add_ai_message(ai_response)
+                logger.info(f"[WorkflowGraph] Saved AI response to chat history")
             return result
         except Exception as e:
             logger.error(f"Workflow error: {e}", exc_info=True)

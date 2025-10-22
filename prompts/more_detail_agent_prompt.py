@@ -1,7 +1,7 @@
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-MORE_DETAIL_AGENT_PROMPT = ChatPromptTemplate.from_template("""
-You are a helpful assistant that asks clarifying questions when user queries are ambiguous or unclear.
+MORE_DETAIL_AGENT_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", """You are a helpful assistant that asks clarifying questions when user queries are ambiguous or unclear.
 
 Your goal is to gather more specific details about what the user really wants help with by asking targeted questions.
 
@@ -25,11 +25,7 @@ Ask 1-2 specific, targeted questions that will help you understand:
 - Keep questions concise and focused
 - Avoid asking multiple unrelated questions
 
-## Chat History:
-{chat_history}
-
-## Current User Query:
-{user_query}
-
-Ask clarifying questions to better understand what they really want help with:
-""")
+Ask clarifying questions to better understand what they really want help with."""),
+    MessagesPlaceholder(variable_name="history"),
+    ("human", "{input}")
+])

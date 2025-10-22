@@ -23,10 +23,10 @@ class LLMService:
 
     async def llm_service(self, req: LLMRequest) -> LLMResponse:
         try:
-            result = await self.workflow_graph.invoke(req.user_input, session_id_key)
-            logger.info(f"[LLM Service Result]: {result}")
+            resp = await self.workflow_graph.invoke(req.user_input, session_id_key)
+
             return LLMResponse(
-                message=result.get("response", "An error occurred while processing your request."),
+                message=resp.get("response", "No response generated")
             )
 
         except Exception as e:

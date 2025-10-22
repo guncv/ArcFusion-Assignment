@@ -17,18 +17,11 @@ class RefinedAgent:
         try:
             user_query = state.get("user_query", "")
 
-            logger.info(f"[ClarificationAgent] Session ID: {state.get('session_id', '')}")
             chat_history = getChatHistory(state.get("session_id", ""))
-            logger.info(f"[ClarificationAgent] Chat history: {chat_history.messages}")
             has_history = len(chat_history.messages) > 0
-
-            logger.info(f"[ClarificationAgent] Session {state.get('session_id', '')} has history: {has_history}")
-            logger.info(f"[ClarificationAgent] History message count: {len(chat_history.messages)}")
 
             if not has_history:
                 response = await self.chain.ainvoke(user_query)
-                logger.info(f"[ClarificationAgent] User query: {user_query}")
-                logger.info(f"[ClarificationAgent] Agent response: {response}")
                 return {
                     **state,
                     "response": response,
