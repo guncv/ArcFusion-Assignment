@@ -1,8 +1,10 @@
-from domain.models.information import CheckWorkflowReq, CheckWorkflowResp, HealthCheckResp
+from domain.models.llm import HealthCheckResp, LLMRequest, LLMResponse, ClearHistoryResponse
 from core.log.logger import logger
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
-from infrastructure.llm.workflow_graph import workflow_graph
+from infrastructure.llm import workflow_graph
+from infrastructure.llm.loader import clearChatHistory
+from core.constants.constants import session_id_key
 
 class LLMService:
     def __init__(self):
@@ -19,11 +21,31 @@ class LLMService:
             logger.error(f"[Health Check Error]: {e}")
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
 
-    # async def invoke_workflow(self, user_input: str) -> str:
-    #     try:
-    #         result = await self.workflow_graph.invoke(req.user_input)
-    #         return result.message
-        
-    #     except Exception as e:
-    #         logger.error(f"[Check Workflow Error]: {e}")
-    #         raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
+    async def llm_service(self, req: LLMRequest) -> LLMResponse:
+        try:
+            resp = await self.workflow_graph.invoke(req.user_input, session_id_key)
+
+            return LLMResponse(
+                message=resp.get("response", "No response generated")
+            )
+
+        except Exception as e:
+            logger.error(f"[LLM Service Error]: {e}")
+            raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
+
+    async def clear_chat_history(self):
+        try:
+            success = clearChatHistory(session_id_key)
+            if success:
+                return
+            else:
+                raise ArcFusionException(
+                    error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
+                    description="Failed to clear chat history"
+                )
+
+        except ArcFusionException:
+            raise
+        except Exception as e:
+            logger.error(f"[Clear History Error]: {e}")
+            raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")

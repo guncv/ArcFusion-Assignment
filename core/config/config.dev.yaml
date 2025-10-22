@@ -1,8 +1,37 @@
 router_agent:
   model: gpt-3.5-turbo
   api_provider: openai
-  temperature: 0.3
-  api_key: ${ROUTER_AGENT_OPENAI_API_KEY}
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 100
+
+smalltalk_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.5
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+clarification_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+needs_more_detail_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.5
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+refined_query_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 1000
 
 tools:
   enabled: true
@@ -33,3 +62,19 @@ vector_db:
 logging:
   level: "DEBUG"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+chat_history:
+  backend: "redis"  # Options: redis, postgres, file
+  ttl: 3600  # Session TTL in seconds (1 hour)
+
+  # Redis configuration
+  redis:
+    host: "${REDIS_HOST:localhost}"
+    port: "${REDIS_PORT:6379}"
+    db: "${REDIS_DB:0}"
+    password: "${REDIS_PASSWORD:}"
+    key_prefix: "chat_history:"
+
+  # Fallback file storage (dev only)
+  file:
+    persist_dir: "./data/chat_history"
