@@ -3,13 +3,13 @@ from domain.models.llm import HealthCheckResp, LLMRequest, LLMResponse, ClearHis
 from core.log.logger import logger
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
-from infrastructure.llm import workflow_graph
+from infrastructure.llm.workflow_graph import WorkflowGraph
 from infrastructure.llm.loader import clearChatHistory
 from core.constants.constants import session_id_key
 
 class LLMService:
     def __init__(self):
-        self.workflow_graph = workflow_graph
+        self.workflow_graph = WorkflowGraph()
     
     async def health_check(self) -> HealthCheckResp:
         try:

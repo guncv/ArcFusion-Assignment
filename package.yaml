@@ -15,10 +15,10 @@ dependencies:
       - python-dotenv
       - python-multipart
       - pyyaml
-      - langchain>=0.3.3,<0.4
-      - langchain-core>=0.3.8
-      - langchain-community>=0.3.3
-      - langgraph>=0.2.28
+      - langchain>=0.2.2
+      - langchain-community
+      - langchain-anthropic
+      - langgraph>=0.2
       - langgraph-checkpoint-sqlite
       - requests
       - loguru
@@ -30,9 +30,10 @@ dependencies:
       - langchain-anthropic
       - langchain-deepseek
       - prometheus-fastapi-instrumentator
-      - pymupdf
+      - PyMuPDF
       - PyJWT
       - numpy
       - language-tool-python>=2.8.0
       - chromadb
       - psycopg2-binary
+      - rank_bm25

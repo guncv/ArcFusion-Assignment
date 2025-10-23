@@ -24,8 +24,9 @@ CLARIFICATION_ROUTING_PROMPT = """
 
     ## Stop condition (IMPORTANT)
     - After calling the tool, the tool will return the validated decision value.
-    - If the tool returns an unexpected value, revise your choice and try calling the tool again ONCE.
-    - If you still get an unexpected value after the retry, choose {{"decision": "process_query"}} and call the tool one last time, then STOP.
+    - If the tool returns a valid decision, STOP immediately - do not call the tool again.
+    - Only if the tool returns "invalid_decision" should you revise your choice and try calling the tool again ONCE.
+    - If you still get "invalid_decision" after the retry, choose {{"decision": "process_query"}} and call the tool one last time, then STOP.
 
     ## Classification Criteria
 

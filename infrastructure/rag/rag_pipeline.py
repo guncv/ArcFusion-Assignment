@@ -5,9 +5,8 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 from infrastructure.rag.document_processor import DocumentProcessor
 from infrastructure.vector_db.vector_store import VectorStoreManager
-from infrastructure.rag.retrievers import HybridRetrieverManager
+from .retrievers import HybridRetrieverManager
 from infrastructure.rag.web_search import TavilyWebSearch
-from infrastructure.llm.loader import loadLLM, getChatHistory
 from domain.enums.llm_type import LLMType
 from core.log.logger import logger
 from core.config.config import nested_config as config
@@ -40,10 +39,9 @@ Context from knowledge base:
     ("human", "{question}")
 ])
 
-
 class RAGPipeline:
     def __init__(self):
-        self.collection_name = config["rag"]["vector_store"]["collection_name"]
+        self.collection_name = config["vector_db"]["collection_name"]
         self.top_k = config["rag"]["retrieval"]["top_k"]
         self.use_web_search_flag = config["rag"]["web_search"].get("enabled", True)
 
@@ -53,8 +51,24 @@ class RAGPipeline:
 
         self.hybrid_retriever: Optional[HybridRetrieverManager] = None
 
-        self.llm = loadLLM(LLMType.REFINED_QUERY_AGENT)
-        self.chain = RAG_PROMPT | self.llm | StrOutputParser()
+        # Lazy initialization to avoid circular imports
+        self._llm = None
+        self._chain = None
+
+    @property
+    def llm(self):
+        """Lazy load LLM to avoid circular imports."""
+        if self._llm is None:
+            from infrastructure.llm.loader import loadLLM
+            self._llm = loadLLM(LLMType.REFINED_QUERY_AGENT)
+        return self._llm
+
+    @property
+    def chain(self):
+        """Lazy load chain to avoid circular imports."""
+        if self._chain is None:
+            self._chain = RAG_PROMPT | self.llm | StrOutputParser()
+        return self._chain
 
     def ingest_documents(self, pdf_paths: List[str], clear_existing: bool = False) -> Dict[str, Any]:
         try:
@@ -85,15 +99,47 @@ class RAGPipeline:
             logger.error(f"[RAGPipeline] Error during ingestion: {e}", exc_info=True)
             return {"status": "failed", "error": str(e)}
 
-    def retrieve(self, query: str) -> List[Document]:
+    def retrieve(self, query: str, use_web_search: Optional[bool] = None) -> Dict[str, Any]:
+        """
+        Retrieve relevant documents for a query using hybrid retrieval.
 
+        Args:
+            query: User query string
+            use_web_search: Override web search setting
+
+        Returns:
+            Dict with local_docs and web_docs
+        """
         try:
-            docs = self.hybrid_retriever.retrieve(query)
-            return docs
+            local_docs = []
+            web_docs = []
+
+            # Retrieve local documents
+            if not self.hybrid_retriever:
+                logger.warning("[RAGPipeline] Hybrid retriever not initialized, creating new one")
+                # Try to get documents from vector store
+                from .retrievers import HybridRetrieverManager
+                self.hybrid_retriever = HybridRetrieverManager()
+
+            local_docs = self.hybrid_retriever.retrieve(query)
+
+            # Retrieve web documents if enabled
+            should_use_web = use_web_search if use_web_search is not None else self.use_web_search_flag
+            if should_use_web and self.web_search:
+                try:
+                    web_docs = self.web_search.search_as_documents(query)
+                except Exception as e:
+                    logger.warning(f"[RAGPipeline] Web search failed: {e}")
+                    web_docs = []
+
+            return {
+                "local_docs": local_docs,
+                "web_docs": web_docs
+            }
 
         except Exception as e:
             logger.error(f"[RAGPipeline] Error during retrieval: {e}", exc_info=True)
-            return {"query": query, "error": str(e), "local_docs": [], "web_docs": [], "total_docs": 0}
+            return {"local_docs": [], "web_docs": []}
 
     async def generate(
         self,
@@ -126,6 +172,7 @@ class RAGPipeline:
             web_context = self._format_web_context(web_docs)
 
             # Step 3: Get chat history
+            from infrastructure.llm.loader import getChatHistory
             chat_history = getChatHistory(session_id)
 
             # Step 4: Generate answer

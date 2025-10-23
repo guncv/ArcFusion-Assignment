@@ -8,9 +8,9 @@ from core.config.config import nested_config as config
 
 class TavilyWebSearch:
     def __init__(self):
-        self.api_key = config["web_search"]["api_key"]
-        self.max_results = config["web_search"]["max_results"]
-        self.search_depth = config["web_search"]["search_depth"]
+        self.api_key = config["rag"]["web_search"]["api_key"]
+        self.max_results = config["rag"]["web_search"]["max_results"]
+        self.search_depth = config["rag"]["web_search"]["search_depth"]
         self.api_url = "https://api.tavily.com/search"
 
     def search(self, query: str) -> List[Dict[str, Any]]:

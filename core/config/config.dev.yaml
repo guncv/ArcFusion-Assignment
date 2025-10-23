@@ -33,6 +33,21 @@ refined_query_agent:
   api_key: ${OPENAI_API_KEY}
   max_tokens: 1000
 
+synthesizer_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.3
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 2000
+
+reflection_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 800
+  max_synthesis_attempts: 3
+
 tools:
   enabled: true
   custom_tools:
@@ -62,6 +77,12 @@ vector_db:
     region: "${PINECONE_REGION:us-east-1}"
 
 rag:
+  auto_ingestion:
+    enabled: true
+    documents_directory: "./documents"
+    clear_existing: false
+    on_startup: true
+    
   chunking:
     chunk_size: 1000
     chunk_overlap: 200
@@ -72,6 +93,11 @@ rag:
     vector_weight: 0.7
     bm25_weight: 0.3
     use_ensemble: true
+
+  confidence_evaluation:
+    min_confidence_threshold: 0.6
+    min_documents_threshold: 2
+    avg_score_threshold: 0.5
 
   web_search:
     enabled: true

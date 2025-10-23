@@ -1,10 +1,41 @@
 from typing import List, Optional
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from langchain_community.retrievers import BM25Retriever,EnsembleRetriever
+from langchain_community.retrievers import BM25Retriever
 from core.log.logger import logger
 from infrastructure.vector_db.vector_store import VectorStoreManager
 from core.config.config import nested_config as config
+
+class SimpleEnsembleRetriever(BaseRetriever):
+    """Simple ensemble retriever that combines multiple retrievers with weights."""
+
+    retrievers: List[BaseRetriever]
+    weights: List[float]
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def _get_relevant_documents(self, query: str) -> List[Document]:
+        """Get relevant documents from all retrievers and combine them."""
+        all_docs = []
+        seen_content = set()
+
+        for retriever, weight in zip(self.retrievers, self.weights):
+            docs = retriever.invoke(query)
+            for doc in docs:
+                # Simple deduplication based on content
+                content_hash = hash(doc.page_content[:100])
+                if content_hash not in seen_content:
+                    seen_content.add(content_hash)
+                    # Add weight to metadata
+                    doc.metadata["relevance_score"] = doc.metadata.get("relevance_score", 0.5) * weight
+                    all_docs.append(doc)
+
+        # Sort by relevance score
+        all_docs.sort(key=lambda x: x.metadata.get("relevance_score", 0), reverse=True)
+        return all_docs
+
+
 
 class HybridRetrieverManager:
 
@@ -17,7 +48,7 @@ class HybridRetrieverManager:
 
         self.vector_retriever: Optional[BaseRetriever] = None
         self.bm25_retriever: Optional[BM25Retriever] = None
-        self.ensemble_retriever: Optional[EnsembleRetriever] = None
+        self.ensemble_retriever: Optional[SimpleEnsembleRetriever] = None
 
         self._initialize_retrievers()
 
@@ -29,7 +60,7 @@ class HybridRetrieverManager:
         if self.documents:
             self.bm25_retriever = BM25Retriever.from_documents(self.documents)
 
-            self.ensemble_retriever = EnsembleRetriever(
+            self.ensemble_retriever = SimpleEnsembleRetriever(
                 retrievers=[self.vector_retriever, self.bm25_retriever],
                 weights=[self.vector_weight, self.bm25_weight]
             )
@@ -43,9 +74,9 @@ class HybridRetrieverManager:
     def retrieve(self, query: str) -> List[Document]:
         try:
             if self.ensemble_retriever:
-                results = self.ensemble_retriever.get_relevant_documents(query)
+                results = self.ensemble_retriever.invoke(query)
             else:
-                results = self.vector_retriever.get_relevant_documents(query)
+                results = self.vector_retriever.invoke(query)
 
             return results
 
