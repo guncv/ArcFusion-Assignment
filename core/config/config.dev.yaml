@@ -33,6 +33,21 @@ refined_query_agent:
   api_key: ${OPENAI_API_KEY}
   max_tokens: 1000
 
+synthesizer_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.3
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 2000
+
+reflection_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 800
+  max_synthesis_attempts: 3
+
 tools:
   enabled: true
   custom_tools:
@@ -46,8 +61,10 @@ api:
   port: 8000
 
 vector_db:
+  collection_name: "arcfusion_docs"
+  embedding_model: "text-embedding-3-small"
   kind: "${VECTOR_DB:chroma}"
-  embedder_api_key: "${VECTOR_DB_EMBEDDER_API_KEY}"
+  embedder_api_key: "${OPENAI_API_KEY}"
   chroma:
     persist_directory: "${VECTOR_DB_PERSIST_DIR:./.chroma}"
   pinecone:
@@ -59,15 +76,47 @@ vector_db:
     cloud: "${PINECONE_CLOUD:aws}"
     region: "${PINECONE_REGION:us-east-1}"
 
+rag:
+  auto_ingestion:
+    enabled: true
+    documents_directory: "./documents"
+    clear_existing: false
+    on_startup: true
+    
+  chunking:
+    chunk_size: 1000
+    chunk_overlap: 200
+    separators: null
+
+  retrieval:
+    top_k: 5
+    vector_weight: 0.7
+    bm25_weight: 0.3
+    use_ensemble: true
+
+  confidence_evaluation:
+    min_confidence_threshold: 0.6
+    min_documents_threshold: 2
+    avg_score_threshold: 0.5
+
+  web_search:
+    enabled: true
+    api_key: "${TAVILY_API_KEY}"
+    max_results: 5
+    search_depth: "advanced"
+
+  generation:
+    llm_type: "refined_query_agent"
+    max_context_length: 4000
+
 logging:
   level: "DEBUG"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 chat_history:
-  backend: "redis"  # Options: redis, postgres, file
-  ttl: 3600  # Session TTL in seconds (1 hour)
+  backend: "redis"
+  ttl: 3600
 
-  # Redis configuration
   redis:
     host: "${REDIS_HOST:localhost}"
     port: "${REDIS_PORT:6379}"
@@ -75,6 +124,5 @@ chat_history:
     password: "${REDIS_PASSWORD:}"
     key_prefix: "chat_history:"
 
-  # Fallback file storage (dev only)
   file:
     persist_dir: "./data/chat_history"

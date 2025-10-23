@@ -6,7 +6,8 @@ from core.config.config import api_config
 from core.utils.except_handler import validation_exception_handler, response_validation_exception_handler
 from core.utils.exception import ArcFusionException
 from app.router import api_router_v1
-
+from infrastructure.rag.auto_ingestion import perform_auto_ingestion
+from core.log.logger import logger
 app = FastAPI(
     title=api_config.get("API_TITLE", "ArcFusion API"),
     version=api_config.get("API_VERSION", "1.0.0"),
@@ -40,3 +41,17 @@ instrumentator = Instrumentator(
 )
 
 instrumentator.instrument(app).expose(app, include_in_schema=False)
+
+
+@app.on_event("startup")
+async def startup_event():
+    ingestion_result = await perform_auto_ingestion()
+    logger.info(f"[Startup] Auto-ingestion result: {ingestion_result}")
+    
+    if ingestion_result:
+        if ingestion_result.get("status") == "success":
+            print("🚀 Auto-ingestion completed successfully!")
+        else:
+            print("⚠️ Auto-ingestion failed - check logs for details")
+    else:
+        print("ℹ️ Auto-ingestion skipped (not configured or no documents found)")

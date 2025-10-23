@@ -56,12 +56,19 @@ class RouterAgent:
             decision = None
 
             # Step 3: Search messages (reverse order = latest first)
+            # Look for the first valid tool result to avoid unnecessary processing
             for msg in reversed(messages):
                 # 3.1 If it's a ToolMessage (result from finalize_routing tool)
                 if msg.__class__.__name__ == "ToolMessage":
                     decision = getattr(msg, "content", None)
-                    if decision:
-                        break
+                    # If we get a valid decision from tool, use it immediately
+                    if decision and decision in [RoutingDecision.CLEAR_QUESTION.value, RoutingDecision.AMBIGUOUS.value]:
+                        logger.info(f"[RouterAgent] Found valid tool result: {decision}")
+                        return {
+                            **state,
+                            "routing_decision": decision,
+                            "response": decision,
+                        }
 
                 # 3.2 If it's an AIMessage that triggered tool calls
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
@@ -69,21 +76,28 @@ class RouterAgent:
                         if tool_call.get("name") == "finalize_routing":
                             args = tool_call.get("args", {})
                             decision = args.get("decision")
-                            if decision:
-                                break
-                    if decision:
-                        break
+                            # If we have a valid decision from tool call, use it immediately
+                            if decision and decision in [RoutingDecision.CLEAR_QUESTION.value, RoutingDecision.AMBIGUOUS.value]:
+                                logger.info(f"[RouterAgent] Found valid tool call: {decision}")
+                                return {
+                                    **state,
+                                    "routing_decision": decision,
+                                    "response": decision,
+                                }
 
-            # Step 4: Fallback — try parsing last AI message text if no decision found
-            if not decision:
-                last_message = messages[-1] if messages else None
-                if last_message and hasattr(last_message, "content"):
-                    decision = getattr(last_message, "content", "").strip()
-                    logger.warning(f"[RouterAgent] No tool call found, using last message content: {decision}")
+            # Step 4: Fallback — try parsing last AI message text if no valid tool result found
+            last_message = messages[-1] if messages else None
+            if last_message and hasattr(last_message, "content"):
+                decision = getattr(last_message, "content", "").strip()
+                logger.warning(f"[RouterAgent] No valid tool call found, using last message content: {decision}")
+            else:
+                decision = RoutingDecision.AMBIGUOUS.value
+                logger.warning(f"[RouterAgent] No decision found, using fallback: {decision}")
 
             # Step 5: Validate and normalize decision
             if decision:
                 decision = str(decision).strip().lower()
+                logger.info(f"[RouterAgent] Extracted decision: '{decision}'")
 
             if decision not in [
                 RoutingDecision.CLEAR_QUESTION.value,

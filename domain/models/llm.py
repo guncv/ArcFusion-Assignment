@@ -1,6 +1,4 @@
-from pydantic import BaseModel, Field
-from typing import Optional
-import uuid
+from pydantic import BaseModel
 
 class HealthCheckResp(BaseModel):
     status: str

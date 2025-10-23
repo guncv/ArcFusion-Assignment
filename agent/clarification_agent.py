@@ -57,6 +57,7 @@ class ClarificationAgent:
             
             # Get chat history for context
             chat_history = getChatHistory(session_id)
+            logger.info(f"[ClarificationAgent] Chat history: {chat_history.messages}")
             history_messages = chat_history.messages
             
             # Build messages list with history + current query
@@ -79,28 +80,47 @@ class ClarificationAgent:
             messages = response.get("messages", [])
             routing_decision = None
             
-            # Look for tool calls in the messages
-            for msg in reversed(messages):
+            # Look for tool calls in the messages - take the FIRST valid decision
+            valid_decisions = [
+                RoutingDecision.SMALLTALK.value,
+                RoutingDecision.NEEDS_MORE_DETAIL.value,
+                RoutingDecision.PROCESS_QUERY.value
+            ]
+            
+            for msg in messages:
+                # Check for ToolMessage with the decision first (tool result)
+                if hasattr(msg, "name") and msg.name == "finalize_clarification_routing":
+                    decision = msg.content
+                    if decision in valid_decisions:
+                        logger.info(f"[ClarificationAgent] Found valid decision from tool message: {decision}")
+                        return {
+                            **state,
+                            "routing_decision": decision,
+                            "response": f"Routing decision: {decision}",
+                        }
+                
+                # Check for tool calls
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
                     for tool_call in msg.tool_calls:
                         if tool_call.get("name") == "finalize_clarification_routing":
                             args = tool_call.get("args", {})
-                            routing_decision = args.get("decision")
-                            if routing_decision:
-                                break
-                    if routing_decision:
-                        break
-                
-                # Also check for ToolMessage with the decision
-                if hasattr(msg, "name") and msg.name == "finalize_clarification_routing":
-                    routing_decision = msg.content
-                    break
+                            decision = args.get("decision")
+                            if decision and decision in valid_decisions:
+                                logger.info(f"[ClarificationAgent] Found valid decision from tool call: {decision}")
+                                return {
+                                    **state,
+                                    "routing_decision": decision,
+                                    "response": f"Routing decision: {decision}",
+                                }
             
-            # Fallback to last message content if no tool call found
-            if not routing_decision:
-                last_message = messages[-1] if messages else None
-                if last_message and hasattr(last_message, "content"):
-                    routing_decision = last_message.content
+            # Fallback to last message content if no valid tool call found
+            last_message = messages[-1] if messages else None
+            if last_message and hasattr(last_message, "content"):
+                routing_decision = last_message.content
+                logger.warning(f"[ClarificationAgent] No valid tool call found, using last message content: {routing_decision}")
+            else:
+                routing_decision = RoutingDecision.PROCESS_QUERY.value
+                logger.warning(f"[ClarificationAgent] No decision found, using fallback: {routing_decision}")
             
             logger.info(f"[ClarificationAgent] Routing decision: {routing_decision}")
             

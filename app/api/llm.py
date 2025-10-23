@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
 from core.log.logger import logger
@@ -40,4 +41,15 @@ async def clear_history_api():
         if type(e) != ArcFusionException:
             e = ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
         logger.error(f"[Clear History API Error]: {e}")
+        e.raise_HTTPException()
+        
+@router.get("/test-web-search")
+async def test_web_search_api() -> JSONResponse:
+    try:
+        resp = await llm_service.test_web_search()
+        return JSONResponse(content=resp)
+    except (ArcFusionException, Exception) as e:
+        if type(e) != ArcFusionException:
+            e = ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
+        logger.error(f"[Test Web Search API Error]: {e}")
         e.raise_HTTPException()

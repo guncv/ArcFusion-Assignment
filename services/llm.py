@@ -1,14 +1,15 @@
+import requests
 from domain.models.llm import HealthCheckResp, LLMRequest, LLMResponse, ClearHistoryResponse
 from core.log.logger import logger
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
-from infrastructure.llm import workflow_graph
+from infrastructure.llm.workflow_graph import WorkflowGraph
 from infrastructure.llm.loader import clearChatHistory
 from core.constants.constants import session_id_key
 
 class LLMService:
     def __init__(self):
-        self.workflow_graph = workflow_graph
+        self.workflow_graph = WorkflowGraph()
     
     async def health_check(self) -> HealthCheckResp:
         try:
@@ -48,4 +49,27 @@ class LLMService:
             raise
         except Exception as e:
             logger.error(f"[Clear History Error]: {e}")
+            raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
+        
+    async def test_web_search(self) -> str:
+        try:
+            API_KEY = "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"
+            query = "latest trends in LangGraph multi-agent orchestration"
+
+            resp = requests.post(
+                "https://api.tavily.com/search",
+                headers={"Authorization": f"Bearer {API_KEY}"},
+                json={
+                    "query": query,
+                    "max_results": 5,
+                    "include_domains": [],
+                    "search_depth": "advanced"
+                }
+            )
+
+            data = resp.json()
+            return data
+
+        except Exception as e:
+            logger.error(f"[Test Web Search Error]: {e}")
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
