@@ -24,8 +24,6 @@ class RefinedQueryAgent:
                 "history": chat_history.messages
             })
             
-            logger.info(f"[RefinedQueryAgent] Response: {response}")
-            
             return {
                 **state,
                 "user_query": response,
