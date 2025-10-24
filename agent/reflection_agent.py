@@ -47,10 +47,10 @@ class ReflectionAgent:
         Initialize reflection agent.
 
         Args:
-            max_synthesis_attempts: Maximum number of synthesis attempts before giving up
+            max_synthesis_attempts: Maximum number of planning attempts (replanning loops) before giving up
         """
         self.llm = loadLLM(LLMType.REFLECTION_AGENT)
-        self.max_synthesis_attempts = max_synthesis_attempts
+        self.max_planning_attempts = max_synthesis_attempts  # Renamed conceptually, but keeping param name for backward compatibility
 
         # Create structured output LLM with tool calling
         self.structured_llm = self.llm.bind_tools(
@@ -108,27 +108,27 @@ class ReflectionAgent:
             user_query = state.get("refined_query") or state.get("user_query", "")
             generated_answer = state.get("response", "")
             sources = state.get("sources", [])
-            synthesis_attempts = state.get("synthesis_attempts", 1)
+            planning_attempts = state.get("planning_attempts", 1)
 
             logger.info(
                 f"[ReflectionAgent] Evaluating answer quality "
-                f"(attempt {synthesis_attempts}/{self.max_synthesis_attempts})"
+                f"(planning attempt {planning_attempts}/{self.max_planning_attempts})"
             )
 
             # Format sources for display
             sources_text = self._format_sources(sources)
 
             # Determine quality threshold based on attempt number
-            quality_threshold = 0.6 if synthesis_attempts == 1 else 0.7
-            
+            quality_threshold = 0.6 if planning_attempts == 1 else 0.7
+
             # Invoke LLM with structured output
             response = await self.structured_llm.ainvoke(
                 REFLECTION_AGENT_PROMPT.format_messages(
                     user_query=user_query,
                     generated_answer=generated_answer,
                     sources=sources_text,
-                    synthesis_attempts=synthesis_attempts,
-                    max_attempts=self.max_synthesis_attempts,
+                    synthesis_attempts=planning_attempts,
+                    max_attempts=self.max_planning_attempts,
                     quality_threshold=quality_threshold
                 )
             )
@@ -137,14 +137,14 @@ class ReflectionAgent:
             reflection_result = self._extract_reflection_result(response)
 
             # Enforce max attempts - don't retry if we've hit the limit
-            if synthesis_attempts >= self.max_synthesis_attempts:
+            if planning_attempts >= self.max_planning_attempts:
                 logger.warning(
-                    f"[ReflectionAgent] Max attempts ({self.max_synthesis_attempts}) reached. "
+                    f"[ReflectionAgent] Max planning attempts ({self.max_planning_attempts}) reached. "
                     f"Accepting current answer with quality score: {reflection_result.quality_score:.2f}"
                 )
                 reflection_result.is_sufficient = True
                 reflection_result.issues.append(
-                    "Maximum synthesis attempts reached - accepting current answer"
+                    "Maximum planning attempts reached - accepting current answer"
                 )
 
             logger.info(

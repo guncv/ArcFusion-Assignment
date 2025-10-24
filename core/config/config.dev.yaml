@@ -1,4 +1,4 @@
-router_agent:
+intent_router_agent:
   model: gpt-3.5-turbo
   api_provider: openai
   temperature: 0.0
@@ -33,14 +33,35 @@ refined_query_agent:
   api_key: ${OPENAI_API_KEY}
   max_tokens: 1000
 
-synthesizer_agent:
+planner_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+rag_synthesizer_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.2
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 1500
+
+orchestration_synthesizer_agent:
   model: gpt-4o-mini
   api_provider: openai
   temperature: 0.3
   api_key: ${OPENAI_API_KEY}
-  max_tokens: 2000
+  max_tokens: 2500
 
-reflection_agent:
+rag_reflection_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+orchestration_reflection_agent:
   model: gpt-4o-mini
   api_provider: openai
   temperature: 0.0
@@ -84,8 +105,8 @@ rag:
     on_startup: true
     
   chunking:
-    chunk_size: 1000
-    chunk_overlap: 200
+    chunk_size: 300
+    chunk_overlap: 50
     separators: null
 
   retrieval:

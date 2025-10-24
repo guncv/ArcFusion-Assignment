@@ -43,13 +43,13 @@ async def clear_history_api():
         logger.error(f"[Clear History API Error]: {e}")
         e.raise_HTTPException()
         
-@router.get("/test-web-search")
-async def test_web_search_api() -> JSONResponse:
+@router.get("/test-rag-retrieval")
+async def test_rag_retrieval_api() -> JSONResponse:
     try:
-        resp = await llm_service.test_web_search()
+        resp = await llm_service.test_rag_retrieval()
         return JSONResponse(content=resp)
     except (ArcFusionException, Exception) as e:
         if type(e) != ArcFusionException:
             e = ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
-        logger.error(f"[Test Web Search API Error]: {e}")
+        logger.error(f"[Test RAG Retrieval API Error]: {e}")
         e.raise_HTTPException()
