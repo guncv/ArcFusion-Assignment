@@ -10,6 +10,7 @@ dependencies:
   - pydantic>=2.7,<3
   - httpx
   - gunicorn
+  - poppler
   - pip:
       - openai
       - python-dotenv
@@ -37,3 +38,7 @@ dependencies:
       - chromadb
       - psycopg2-binary
       - rank_bm25
+      - langchain-experimental
+      - llama-index
+      - llama-index-vector-stores-chroma
+      - "unstructured[pdf]"

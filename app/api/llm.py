@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
 from core.log.logger import logger
+from domain.models.rag import RAGQueryRequest
 from services.llm import LLMService
 from domain.models.llm import HealthCheckResp, LLMRequest, LLMResponse, ClearHistoryResponse
 
@@ -43,10 +44,10 @@ async def clear_history_api():
         logger.error(f"[Clear History API Error]: {e}")
         e.raise_HTTPException()
         
-@router.get("/test-rag-retrieval")
-async def test_rag_retrieval_api() -> JSONResponse:
+@router.post("/test-rag-retrieval")
+async def test_rag_retrieval_api(req: RAGQueryRequest) -> JSONResponse:
     try:
-        resp = await llm_service.test_rag_retrieval()
+        resp = await llm_service.test_rag_retrieval(req.query)
         return JSONResponse(content=resp)
     except (ArcFusionException, Exception) as e:
         if type(e) != ArcFusionException:

@@ -100,20 +100,32 @@ vector_db:
 rag:
   auto_ingestion:
     enabled: true
-    documents_directory: "./documents"
+    documents_directory: ["./documents"]
     clear_existing: false
     on_startup: true
+
+  embedding_model: "text-embedding-3-small"
+  embedding_api_key: "${OPENAI_API_KEY}"
     
   chunking:
     chunk_size: 300
     chunk_overlap: 50
     separators: null
+    strategy: "semantic_llamaindex"
+    semantic_model: "text-embedding-3-small"
+    semantic_similarity_threshold: 0.7
+    semantic_min_chunk_size: null
+    llamaindex_buffer_size: 1
+    llamaindex_breakpoint_threshold: 85
 
   retrieval:
     top_k: 5
     vector_weight: 0.7
     bm25_weight: 0.3
     use_ensemble: true
+    use_reranker: true
+    reranker_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    reranker_top_n: 5
 
   confidence_evaluation:
     min_confidence_threshold: 0.6

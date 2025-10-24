@@ -2,15 +2,17 @@ from typing import List
 from langchain_core.documents import Document
 from core.log.logger import logger
 from domain.enums.workflow_state import WorkflowState
-from infrastructure.rag import get_rag_pipeline
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
+from infrastructure.rag.retrievers import RetrieverManager
+from infrastructure.vector_db.vector_store import VectorStoreManager
 
 
 class RAGRetrievalAgent:
 
     def __init__(self):
-        self.rag_pipeline = get_rag_pipeline()
+        vector_store_manager = VectorStoreManager()
+        self.retriever_manager = RetrieverManager(vector_store_manager)
 
     async def invoke(self, state: WorkflowState) -> WorkflowState:
         try:
@@ -18,11 +20,8 @@ class RAGRetrievalAgent:
             if not query:
                 raise ValueError("No query found in state")
 
-            retrieval_results = self.rag_pipeline.retrieve(query)
-            documents: List[Document] = retrieval_results.get("local_docs", [])
-            web_docs: List[Document] = retrieval_results.get("web_docs", [])
-            
-            logger.info(f"[RAGRetrievalAgent] local documents: {len(documents)}, web documents: {len(web_docs)}")
+            documents = self.retriever_manager.get_relevant_documents(query)
+            logger.info(f"[RAGRetrievalAgent] retrieved documents: {len(documents)}")
 
             scores = []
             for doc in documents:
@@ -32,7 +31,6 @@ class RAGRetrievalAgent:
             return {
                 **state,
                 "retrieved_documents": documents,
-                "web_documents": web_docs,
                 "retrieval_scores": scores,
             }
 

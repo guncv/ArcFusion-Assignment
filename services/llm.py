@@ -6,12 +6,15 @@ from domain.enums.error_code import ArcFusionErrorCodes
 from infrastructure.llm.workflow_graph import WorkflowGraph
 from infrastructure.llm.loader import clearChatHistory
 from core.constants.constants import session_id_key
-from infrastructure.rag import get_rag_pipeline
+from infrastructure.rag.retrievers import RetrieverManager
+from infrastructure.vector_db.vector_store import VectorStoreManager
+
 class LLMService:
     def __init__(self):
         self.workflow_graph = WorkflowGraph()
-        self.rag_pipeline = get_rag_pipeline()
-    
+        self.vector_store_manager = VectorStoreManager()
+        self.retriever_manager = RetrieverManager(self.vector_store_manager)
+        
     async def health_check(self) -> HealthCheckResp:
         try:
             resp = HealthCheckResp(
@@ -52,10 +55,23 @@ class LLMService:
             logger.error(f"[Clear History Error]: {e}")
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
         
-    async def test_rag_retrieval(self) -> str:
+    async def test_rag_retrieval(self, query: str) -> dict:
         try:
-            resp = self.rag_pipeline.retrieve("latest trends in LangGraph multi-agent orchestration")
-            return resp
+            documents = self.retriever_manager.get_relevant_documents(query)
+            
+            logger.info(f"[Test RAG Retrieval] Retrieved documents: {documents}")
+            serializable_docs = []
+            for doc in documents:
+                serializable_docs.append({
+                    "page_content": doc.page_content,
+                    "metadata": doc.metadata
+                })
+            
+            return {
+                "query": "latest trends in LangGraph multi-agent orchestration",
+                "documents": serializable_docs,
+                "document_count": len(serializable_docs)
+            }
         except Exception as e:
             logger.error(f"[Test RAG Retrieval Error]: {e}")
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
