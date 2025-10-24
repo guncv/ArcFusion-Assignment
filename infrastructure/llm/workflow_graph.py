@@ -4,6 +4,7 @@ from core.config.config import nested_config as config
 from domain.enums.workflow_state import WorkflowState, RoutingDecision
 from domain.enums.llm_type import LLMType
 from infrastructure.llm.loader import getChatHistory
+from infrastructure.llm.langsmith_config import LangSmithTracer
 from agent.small_talk_agent import SmallTalkAgent
 from agent.clarification_agent import ClarificationAgent
 from agent.more_detail_agent import MoreDetailAgent
@@ -22,19 +23,21 @@ class WorkflowGraph:
     def __init__(self):
         orchestration_reflection_config = config.get("orchestration_reflection_agent", {})
         max_synthesis_attempts = orchestration_reflection_config.get("max_synthesis_attempts", 3)
-
+        self.tracer = LangSmithTracer()
         self.agents = {
             LLMType.INTENT_ROUTER_AGENT.value: IntentRouterAgent(),
             LLMType.SMALLTALK_AGENT.value: SmallTalkAgent(),
             LLMType.CLARIFICATION_AGENT.value: ClarificationAgent(),
             LLMType.NEEDS_MORE_DETAIL_AGENT.value: MoreDetailAgent(),
             LLMType.REFINED_QUERY_AGENT.value: RefinedQueryAgent(),
-            LLMType.PLANNER_AGENT.value: PlannerAgent(),
+            
             LLMType.RAG_RETRIEVAL_AGENT.value: RAGRetrievalAgent(),
-            LLMType.WEB_SEARCH_AGENT.value: WebSearchAgent(),
             LLMType.RAG_SYNTHESIZER_AGENT.value: RAGSynthesizerAgent(),
-            LLMType.ORCHESTRATION_SYNTHESIZER_AGENT.value: OrchestrationSynthesizerAgent(),
             LLMType.RAG_REFLECTION_AGENT.value: RAGReflectionAgent(),
+            
+            LLMType.PLANNER_AGENT.value: PlannerAgent(),
+            LLMType.WEB_SEARCH_AGENT.value: WebSearchAgent(),
+            LLMType.ORCHESTRATION_SYNTHESIZER_AGENT.value: OrchestrationSynthesizerAgent(),
             LLMType.ORCHESTRATION_REFLECTION_AGENT.value: OrchestrationReflectionAgent(
                 max_synthesis_attempts=max_synthesis_attempts
             ),
@@ -308,28 +311,24 @@ class WorkflowGraph:
 
         try:
             logger.info(f"[WorkflowGraph] Starting workflow for session: {session_id}")
-            result = await self.graph.ainvoke(initial_state)
+
+            # Add LangSmith metadata if tracing is enabled
+            if self.tracer.enabled and self.tracer.client:
+                metadata = self.tracer.add_metadata({
+                    "session_id": session_id,
+                    "query_length": len(user_input),
+                    "workflow_type": "rag_orchestration"
+                })
+                result = await self.graph.ainvoke(
+                    initial_state,
+                    config={"metadata": metadata}
+                )
+            else:
+                result = await self.graph.ainvoke(initial_state)
 
             ai_response = result.get("response", "")
             if ai_response:
                 chat_history.add_ai_message(ai_response)
-
-            quality_score = result.get('answer_quality_score', 'N/A')
-            quality_str = f"{quality_score:.2f}" if isinstance(quality_score, (int, float)) else str(quality_score)
-            
-            # Log completion details
-            tool_results = result.get('tool_results', {})
-            execution_strategy = tool_results.get('strategy', 'N/A') if isinstance(tool_results, dict) else 'N/A'
-
-            logger.info(
-                f"[WorkflowGraph] Workflow completed successfully. "
-                f"Strategy: {execution_strategy}, "
-                f"Confidence: {result.get('confidence_score', 'N/A')}, "
-                f"Quality: {quality_str}, "
-                f"Planning attempts: {result.get('planning_attempts', 1)}, "
-                f"Synthesis attempts: {result.get('synthesis_attempts', 1)}, "
-                f"Tools used: {result.get('planned_tools', [])}"
-            )
 
             return result
 

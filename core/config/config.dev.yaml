@@ -69,6 +69,12 @@ orchestration_reflection_agent:
   max_tokens: 800
   max_synthesis_attempts: 3
 
+langsmith:
+  enabled: false
+  api_key: "${LANGCHAIN_API_KEY}"
+  project_name: "ArcFusionGraph"
+  endpoint: "https://eu.api.smith.langchain.com"
+
 tools:
   enabled: true
   custom_tools:
@@ -159,3 +165,9 @@ chat_history:
 
   file:
     persist_dir: "./data/chat_history"
+
+langsmith:
+  enabled: ${LANGCHAIN_TRACING_V2:false}
+  api_key: ${LANGCHAIN_API_KEY:}
+  project_name: ${LANGCHAIN_PROJECT:arcfusion-dev}
+  endpoint: ${LANGCHAIN_ENDPOINT:https://api.smith.langchain.com}

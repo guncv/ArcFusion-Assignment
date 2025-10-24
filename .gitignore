@@ -66,3 +66,4 @@ gcp_secret_key.json
 
 # ChromaDB vector database files
 .chroma/
+.claude/

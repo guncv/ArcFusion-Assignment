@@ -10,12 +10,23 @@ class RoutingDecision(Enum):
     SMALLTALK = "smalltalk"
     NEEDS_MORE_DETAIL = "needs_more_detail"
     PROCESS_QUERY = "process_query"
+    
+    # RAG Reflection Agent decisions
+    RAG_SUFFICIENT = "rag_sufficient"
+    RAG_INSUFFICIENT = "rag_insufficient"
+    NOT_RELEVANT = "not_relevant"
 
 class WorkflowState(TypedDict, total=False):
     user_query: str
     session_id: str
     routing_decision: str
-    refined_query: str
+    
+    # RAG-related fields
+    retrieved_documents: list
+    retrieval_scores: list
+    confidence_score: float
+    needs_web_search: bool
+    web_search_results: list
 
     # Planning fields
     execution_plan: str  # The plan description from planner
@@ -23,13 +34,6 @@ class WorkflowState(TypedDict, total=False):
     tool_results: dict   # Results from each tool execution
     previous_attempts: list  # History of previous planning attempts
     planning_attempts: int  # Number of times planner has been called
-
-    # RAG-related fields
-    retrieved_documents: list
-    retrieval_scores: list
-    confidence_score: float
-    needs_web_search: bool
-    web_search_results: list
 
     # Response fields
     response: str
