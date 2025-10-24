@@ -31,47 +31,12 @@ class LLMService:
             resp = await self.workflow_graph.invoke(req.user_input, session_id_key)
 
             return LLMResponse(
-                message=resp.get("response", "No response generated")
+                response=resp.get("response", "No response generated"),
+                rag_synthesizer_response=resp.get("rag_synthesizer_response", "No RAG synthesizer response generated"),
+                rag_routing_decision=resp.get("routing_decision", "No routing decision generated"),
+                rag_reflection_comment=resp.get("rag_reflection_comment", "No reflection comment generated")
             )
-
+            
         except Exception as e:
             logger.error(f"[LLM Service Error]: {e}")
-            raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
-
-    async def clear_chat_history(self):
-        try:
-            success = clearChatHistory(session_id_key)
-            if success:
-                return
-            else:
-                raise ArcFusionException(
-                    error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
-                    description="Failed to clear chat history"
-                )
-
-        except ArcFusionException:
-            raise
-        except Exception as e:
-            logger.error(f"[Clear History Error]: {e}")
-            raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
-        
-    async def test_rag_retrieval(self, query: str) -> dict:
-        try:
-            documents = self.retriever_manager.get_relevant_documents(query)
-            
-            logger.info(f"[Test RAG Retrieval] Retrieved documents: {documents}")
-            serializable_docs = []
-            for doc in documents:
-                serializable_docs.append({
-                    "page_content": doc.page_content,
-                    "metadata": doc.metadata
-                })
-            
-            return {
-                "query": "latest trends in LangGraph multi-agent orchestration",
-                "documents": serializable_docs,
-                "document_count": len(serializable_docs)
-            }
-        except Exception as e:
-            logger.error(f"[Test RAG Retrieval Error]: {e}")
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")

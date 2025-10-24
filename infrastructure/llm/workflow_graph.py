@@ -103,15 +103,16 @@ class WorkflowGraph:
         # RAG Agent -> RAG Reflection
         workflow.add_edge(LLMType.RAG_AGENT.value, LLMType.RAG_REFLECTION_AGENT.value)
 
-        # RAG Reflection decides: sufficient -> END, insufficient -> Orchestration (Planner)
-        workflow.add_conditional_edges(
-            LLMType.RAG_REFLECTION_AGENT.value,
-            self._route_after_rag_reflection,
-            {
-                "end": END,
-                "orchestration": LLMType.PLANNER_AGENT.value,
-            }
-        )
+        # # RAG Reflection decides: sufficient -> END, insufficient -> Orchestration (Planner)
+        # workflow.add_conditional_edges(
+        #     LLMType.RAG_REFLECTION_AGENT.value,
+        #     self._route_after_rag_reflection,
+        #     {
+        #         "end": END,
+        #         "orchestration": LLMType.PLANNER_AGENT.value,
+        #     }
+        # )
+        workflow.add_edge(LLMType.RAG_REFLECTION_AGENT.value, END)
 
         # Orchestration flow: Planner -> Tool Executor -> Synthesis -> Reflection
         workflow.add_edge(LLMType.PLANNER_AGENT.value, LLMType.TOOL_EXECUTOR.value)

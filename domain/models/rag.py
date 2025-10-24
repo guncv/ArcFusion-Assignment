@@ -25,6 +25,12 @@ class RAGQueryRequest(BaseModel):
     query: str = Field(description="User query")
 
 
+class RAGRetrievalTestResponse(BaseModel):
+    query: str = Field(description="Original query")
+    documents: List[dict] = Field(description="Retrieved documents with content and metadata")
+    document_count: int = Field(description="Number of documents retrieved")
+
+
 class RAGQueryResponse(BaseModel):
     answer: str = Field(description="Generated answer")
     sources: List[DocumentSource] = Field(description="Source documents")

@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import TypedDict, Optional
+from typing import TypedDict, Optional, List
+from langchain_core.documents import Document
 
 class RoutingDecision(Enum):
     # Router Agent decisions
@@ -16,17 +17,23 @@ class RoutingDecision(Enum):
     RAG_INSUFFICIENT = "rag_insufficient"
     NOT_RELEVANT = "not_relevant"
 
+class RetrievedDocument(TypedDict):
+    document: Document
+    score: float
+
 class WorkflowState(TypedDict, total=False):
     user_query: str
     session_id: str
     routing_decision: str
     
     # RAG-related fields
-    retrieved_documents: list
-    retrieval_scores: list
-    confidence_score: float
-    needs_web_search: bool
-    web_search_results: list
+    retrieved_documents_with_scores: List[RetrievedDocument]
+    
+    # RAG Synthesizer fields
+    rag_synthesizer_response: str
+    
+    # RAG Reflection fields
+    rag_reflection_comment: str
 
     # Planning fields
     execution_plan: str  # The plan description from planner

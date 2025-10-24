@@ -24,7 +24,7 @@ class RetrieverManager():
             score = float(node_with_score.score) if node_with_score.score is not None else 0.0
             doc = LangChainDocument(
                 page_content=node.text if hasattr(node, 'text') else str(node),
-                metadata={**node.metadata, "retrieval_score": score}
+                metadata={"score": score}
             )
             documents.append(doc)
         return documents
@@ -43,7 +43,7 @@ class RetrieverManager():
                 for node_with_score in nodes_with_scores:
                     # Convert numpy float32 to Python float for JSON serialization
                     rerank_score = float(node_with_score.score) if node_with_score.score is not None else 0.0
-                    node_with_score.node.metadata["rerank_score"] = rerank_score
+                    node_with_score.node.metadata["score"] = rerank_score
 
             langchain_docs = self._llamaindex_to_langchain(nodes_with_scores)
             logger.info(f"[LlamaIndexRetriever] retrieved documents: {langchain_docs}")

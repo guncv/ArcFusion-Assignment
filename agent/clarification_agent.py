@@ -17,14 +17,15 @@ class ClarificationRoutingInput(BaseModel):
 @tool(args_schema=ClarificationRoutingInput)
 def finalize_clarification_routing(decision: str) -> str:
     """
-    Finalizes the clarification routing decision after validation.
+    Validates and finalizes the clarification routing decision after LLM analysis.
+    This tool only validates the decision format - the LLM makes the intelligent choice.
     Use this tool to submit your final routing decision.
 
     Args:
         decision: The final routing decision ('smalltalk', 'needs_clarification', or 'process_query').
 
     Returns:
-        str: Confirmation of the finalized decision.
+        str: Confirmation of the validated decision.
     """
     cleaned_decision = decision.strip().lower()
     valid_decisions = [
@@ -127,7 +128,6 @@ class ClarificationAgent:
             return {
                 **state,
                 "routing_decision": routing_decision,
-                "response": f"Routing decision: {routing_decision}",
             }
 
         except Exception as e:

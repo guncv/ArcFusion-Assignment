@@ -15,14 +15,15 @@ class RoutingDecisionInput(BaseModel):
 @tool(args_schema=RoutingDecisionInput)
 def finalize_routing(decision: str) -> str:
     """
-    Finalizes the routing decision after validation.
+    Validates and finalizes the routing decision after LLM analysis.
+    This tool only validates the decision format - the LLM makes the intelligent choice.
     Use this tool to submit your final routing decision.
 
     Args:
         decision: The final routing decision ('clear_question' or 'ambiguous').
 
     Returns:
-        str: Confirmation of the finalized decision.
+        str: Confirmation of the validated decision.
     """
     cleaned_decision = decision.strip().lower()
     valid_decisions = [RoutingDecision.CLEAR_QUESTION.value, RoutingDecision.AMBIGUOUS.value]
@@ -30,7 +31,7 @@ def finalize_routing(decision: str) -> str:
     if cleaned_decision not in valid_decisions:
         logger.error(f"[Tool - finalize_routing] Attempted to finalize invalid decision: {decision}")
         return "invalid_decision"
-
+    
     return cleaned_decision
 
 class IntentRouterAgent:
@@ -67,7 +68,6 @@ class IntentRouterAgent:
                         return {
                             **state,
                             "routing_decision": decision,
-                            "response": decision,
                         }
 
                 # 3.2 If it's an AIMessage that triggered tool calls
@@ -82,7 +82,6 @@ class IntentRouterAgent:
                                 return {
                                     **state,
                                     "routing_decision": decision,
-                                    "response": decision,
                                 }
 
             # Step 4: Fallback — try parsing last AI message text if no valid tool result found
@@ -110,7 +109,6 @@ class IntentRouterAgent:
             return {
                 **state,
                 "routing_decision": decision,
-                "response": decision,
             }
 
         except Exception as e:

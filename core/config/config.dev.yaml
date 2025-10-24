@@ -33,6 +33,20 @@ refined_query_agent:
   api_key: ${OPENAI_API_KEY}
   max_tokens: 1000
 
+rag_synthesizer_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.2
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 1500
+
+rag_reflection_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
 planner_agent:
   model: gpt-4o-mini
   api_provider: openai
@@ -40,26 +54,12 @@ planner_agent:
   api_key: ${OPENAI_API_KEY}
   max_tokens: 500
 
-rag_synthesizer_agent:
-  model: gpt-4o-mini
-  api_provider: openai
-  temperature: 0.2
-  api_key: ${OPENAI_API_KEY}
-  max_tokens: 1500
-
 orchestration_synthesizer_agent:
   model: gpt-4o-mini
   api_provider: openai
   temperature: 0.3
   api_key: ${OPENAI_API_KEY}
   max_tokens: 2500
-
-rag_reflection_agent:
-  model: gpt-4o-mini
-  api_provider: openai
-  temperature: 0.0
-  api_key: ${OPENAI_API_KEY}
-  max_tokens: 500
 
 orchestration_reflection_agent:
   model: gpt-4o-mini
