@@ -30,10 +30,7 @@ class LLMService:
             resp = await self.workflow_graph.invoke(req.user_input, session_id_key)
 
             return LLMResponse(
-                response=resp.get("response", "No response generated"),
-                rag_synthesizer_response=resp.get("rag_synthesizer_response", "No RAG synthesizer response generated"),
-                rag_routing_decision=resp.get("routing_decision", "No routing decision generated"),
-                rag_reflection_comment=resp.get("rag_reflection_comment", "No reflection comment generated")
+                response=resp.get("response", "No response generated")
             )
             
         except Exception as e:

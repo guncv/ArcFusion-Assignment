@@ -225,6 +225,7 @@ class WorkflowGraph:
         return resp
 
     async def _rag_agent(self, state: WorkflowState) -> WorkflowState:
+        logger.info(f"[WorkflowGraph] RAG Agent: state: {state}")
         rag_state = await self.agents[LLMType.RAG_RETRIEVAL_AGENT.value].invoke(state)
         synthesis_state = await self.agents[LLMType.RAG_SYNTHESIZER_AGENT.value].invoke(rag_state)
         return synthesis_state

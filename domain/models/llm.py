@@ -8,9 +8,6 @@ class LLMRequest(BaseModel):
 
 class LLMResponse(BaseModel):
     response: str
-    rag_synthesizer_response: str
-    rag_routing_decision: str
-    rag_reflection_comment: str
 
 class ClearHistoryResponse(BaseModel):
     message: str

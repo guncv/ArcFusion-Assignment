@@ -1,6 +1,3 @@
-from typing import List, Dict, Any
-from pathlib import Path
-from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from core.log.logger import logger
 from domain.enums.workflow_state import WorkflowState
@@ -50,6 +47,7 @@ class RAGSynthesizerAgent:
             return {
                 **state,
                 "rag_synthesizer_response": response,
+                "response": response,
             }
 
         except Exception as e:
