@@ -1,6 +1,6 @@
 from core.log.logger import logger
 from domain.enums.workflow_state import WorkflowState, RoutingDecision
-from prompts.router_agent_prompt import ROUTER_AGENT_PROMPT
+from prompts.intent_analysis_agent_prompt import INTENT_ANALYSIS_AGENT_PROMPT
 from infrastructure.llm.loader import loadLLM
 from domain.enums.llm_type import LLMType
 from langchain_core.tools import tool
@@ -9,39 +9,39 @@ from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
 from pydantic import BaseModel, Field
 
-class RoutingDecisionInput(BaseModel):
-    decision: str = Field(description="The routing decision: 'clear_question' or 'ambiguous'")
+class IntentDecisionInput(BaseModel):
+    decision: str = Field(description="The intent decision: 'use_rag' or 'use_web_search'")
 
-@tool(args_schema=RoutingDecisionInput)
-def finalize_routing(decision: str) -> str:
+@tool(args_schema=IntentDecisionInput)
+def finalize_intent_decision(decision: str) -> str:
     """
-    Validates and finalizes the routing decision after LLM analysis.
-    This tool only validates the decision format - the LLM makes the intelligent choice.
-    Use this tool to submit your final routing decision.
+    Validates and finalizes the intent decision after LLM analysis.
+    This tool determines whether to use RAG (documents) or web search (real-time data).
+    Use this tool to submit your final intent decision.
 
     Args:
-        decision: The final routing decision ('clear_question' or 'ambiguous').
+        decision: The final intent decision ('use_rag' or 'use_web_search').
 
     Returns:
         str: Confirmation of the validated decision.
     """
     cleaned_decision = decision.strip().lower()
-    valid_decisions = [RoutingDecision.CLEAR_QUESTION.value, RoutingDecision.AMBIGUOUS.value]
+    valid_decisions = [RoutingDecision.USE_RAG.value, RoutingDecision.USE_WEB_SEARCH.value]
 
     if cleaned_decision not in valid_decisions:
-        logger.error(f"[Tool - finalize_routing] Attempted to finalize invalid decision: {decision}")
+        logger.error(f"[Tool - finalize_intent] Attempted to finalize invalid decision: {decision}")
         return "invalid_decision"
-    
+
     return cleaned_decision
 
-class IntentRouterAgent:
+class IntentAnalysisAgent:
     def __init__(self):
-        self.llm = loadLLM(LLMType.INTENT_ROUTER_AGENT)
-        self.tools = [finalize_routing]
+        self.llm = loadLLM(LLMType.INTENT_ANALYSIS_AGENT)
+        self.tools = [finalize_intent_decision]
         self.agent = create_agent(
             model=self.llm,
             tools=self.tools,
-            system_prompt=ROUTER_AGENT_PROMPT
+            system_prompt=INTENT_ANALYSIS_AGENT_PROMPT
         )
 
     async def invoke(self, state: WorkflowState) -> WorkflowState:
@@ -59,12 +59,12 @@ class IntentRouterAgent:
             # Step 3: Search messages (reverse order = latest first)
             # Look for the first valid tool result to avoid unnecessary processing
             for msg in reversed(messages):
-                # 3.1 If it's a ToolMessage (result from finalize_routing tool)
+                # 3.1 If it's a ToolMessage (result from finalize_intent tool)
                 if msg.__class__.__name__ == "ToolMessage":
                     decision = getattr(msg, "content", None)
                     # If we get a valid decision from tool, use it immediately
-                    if decision and decision in [RoutingDecision.CLEAR_QUESTION.value, RoutingDecision.AMBIGUOUS.value]:
-                        logger.info(f"[IntentRouterAgent] Found valid tool result: {decision}")
+                    if decision and decision in [RoutingDecision.USE_RAG.value, RoutingDecision.USE_WEB_SEARCH.value]:
+                        logger.info(f"[IntentAnalysisAgent] Found valid tool result: {decision}")
                         return {
                             **state,
                             "routing_decision": decision,
@@ -73,12 +73,12 @@ class IntentRouterAgent:
                 # 3.2 If it's an AIMessage that triggered tool calls
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
                     for tool_call in msg.tool_calls:
-                        if tool_call.get("name") == "finalize_routing":
+                        if tool_call.get("name") == "finalize_intent_decision":
                             args = tool_call.get("args", {})
                             decision = args.get("decision")
                             # If we have a valid decision from tool call, use it immediately
-                            if decision and decision in [RoutingDecision.CLEAR_QUESTION.value, RoutingDecision.AMBIGUOUS.value]:
-                                logger.info(f"[IntentRouterAgent] Found valid tool call: {decision}")
+                            if decision and decision in [RoutingDecision.USE_RAG.value, RoutingDecision.USE_WEB_SEARCH.value]:
+                                logger.info(f"[IntentAnalysisAgent] Found valid tool call: {decision}")
                                 return {
                                     **state,
                                     "routing_decision": decision,
@@ -88,22 +88,22 @@ class IntentRouterAgent:
             last_message = messages[-1] if messages else None
             if last_message and hasattr(last_message, "content"):
                 decision = getattr(last_message, "content", "").strip()
-                logger.warning(f"[IntentRouterAgent] No valid tool call found, using last message content: {decision}")
+                logger.warning(f"[IntentAnalysisAgent] No valid tool call found, using last message content: {decision}")
             else:
-                decision = RoutingDecision.AMBIGUOUS.value
-                logger.warning(f"[IntentRouterAgent] No decision found, using fallback: {decision}")
+                decision = RoutingDecision.USE_RAG.value  # Default to RAG if unclear
+                logger.warning(f"[IntentAnalysisAgent] No decision found, using fallback: {decision}")
 
             # Step 5: Validate and normalize decision
             if decision:
                 decision = str(decision).strip().lower()
-                logger.info(f"[IntentRouterAgent] Extracted decision: '{decision}'")
+                logger.info(f"[IntentAnalysisAgent] Extracted decision: '{decision}'")
 
             if decision not in [
-                RoutingDecision.CLEAR_QUESTION.value,
-                RoutingDecision.AMBIGUOUS.value,
+                RoutingDecision.USE_RAG.value,
+                RoutingDecision.USE_WEB_SEARCH.value,
             ]:
-                logger.warning(f"[IntentRouterAgent] Unexpected output: {decision} → fallback to 'ambiguous'")
-                decision = RoutingDecision.AMBIGUOUS.value
+                logger.warning(f"[IntentAnalysisAgent] Unexpected output: {decision} → fallback to 'use_rag'")
+                decision = RoutingDecision.USE_RAG.value
 
             # Step 6: Return updated state
             return {
@@ -112,8 +112,8 @@ class IntentRouterAgent:
             }
 
         except Exception as e:
-            logger.error(f"[IntentRouterAgent] Error during invoke: {e}", exc_info=True)
+            logger.error(f"[IntentAnalysisAgent] Error during invoke: {e}", exc_info=True)
             raise ArcFusionException(
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
-                description=f"IntentRouterAgent error: [{type(e).__name__}]: {str(e)}",
+                description=f"IntentAnalysisAgent error: [{type(e).__name__}]: {str(e)}",
             )

@@ -1,19 +1,18 @@
+from typing import List
+from langchain_core.documents import Document
 import requests
 from domain.models.llm import HealthCheckResp, LLMRequest, LLMResponse, ClearHistoryResponse
 from core.log.logger import logger
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
 from infrastructure.llm.workflow_graph import WorkflowGraph
-from infrastructure.llm.loader import clearChatHistory
 from core.constants.constants import session_id_key
-from infrastructure.rag.retrievers import RetrieverManager
-from infrastructure.vector_db.vector_store import VectorStoreManager
+from infrastructure.rag import get_tavily_web_search
 
 class LLMService:
     def __init__(self):
         self.workflow_graph = WorkflowGraph()
-        self.vector_store_manager = VectorStoreManager()
-        self.retriever_manager = RetrieverManager(self.vector_store_manager)
+        self.web_search_tool = get_tavily_web_search()
         
     async def health_check(self) -> HealthCheckResp:
         try:
@@ -39,4 +38,20 @@ class LLMService:
             
         except Exception as e:
             logger.error(f"[LLM Service Error]: {e}")
+            raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
+        
+    async def clear_chat_history(self) -> ClearHistoryResponse:
+        try:
+            self.workflow_graph.clear_chat_history()
+            return ClearHistoryResponse(message="Chat history cleared successfully")
+        except Exception as e:
+            logger.error(f"[Clear Chat History Error]: {e}")
+            raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
+        
+    async def web_search(self, query: str) -> List[Document]:
+        try:
+            results = self.web_search_tool.search_as_documents(query)
+            return results
+        except Exception as e:
+            logger.error(f"[Web Search Error]: {e}")
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")

@@ -14,3 +14,6 @@ class LLMResponse(BaseModel):
 
 class ClearHistoryResponse(BaseModel):
     message: str
+
+class WebSearchRequest(BaseModel):
+    query: str
