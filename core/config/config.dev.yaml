@@ -1,12 +1,12 @@
 workflow:
   orchestration_max_attempts: 2
 
-init_router_agent:
-  model: gpt-3.5-turbo
+clarification_agent:
+  model: gpt-4o-mini
   api_provider: openai
   temperature: 0.0
   api_key: ${OPENAI_API_KEY}
-  max_tokens: 100
+  max_tokens: 500
 
 intent_analysis_agent:
   model: gpt-3.5-turbo
@@ -19,13 +19,6 @@ smalltalk_agent:
   model: gpt-3.5-turbo
   api_provider: openai
   temperature: 0.5
-  api_key: ${OPENAI_API_KEY}
-  max_tokens: 500
-
-clarification_agent:
-  model: gpt-4o-mini
-  api_provider: openai
-  temperature: 0.0
   api_key: ${OPENAI_API_KEY}
   max_tokens: 500
 
@@ -60,19 +53,19 @@ rag_reflection_agent:
 planner_agent:
   model: gpt-4o-mini
   api_provider: openai
-  temperature: 0.0
+  temperature: 0.3
   api_key: ${OPENAI_API_KEY}
   max_tokens: 500
 
 orchestration_synthesizer_agent:
-  model: gpt-4o-mini
+  model: gpt-3.5-turbo
   api_provider: openai
   temperature: 0.3
   api_key: ${OPENAI_API_KEY}
   max_tokens: 2500
 
 orchestration_reflection_agent:
-  model: gpt-4o-mini
+  model: gpt-3.5-turbo
   api_provider: openai
   temperature: 0.0
   api_key: ${OPENAI_API_KEY}

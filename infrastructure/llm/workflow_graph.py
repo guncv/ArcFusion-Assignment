@@ -6,10 +6,9 @@ from domain.enums.llm_type import LLMType
 from infrastructure.llm.loader import getChatHistory
 from infrastructure.llm.langsmith_config import LangSmithTracer
 from agent.small_talk_agent import SmallTalkAgent
-from agent.clarification_agent import ClarificationAgent
 from agent.more_detail_agent import MoreDetailAgent
 from agent.refined_query_agent import RefinedQueryAgent
-from agent.init_router_agent import InitRouterAgent
+from agent.clarification_agent import ClarificationAgent
 from agent.intent_analysis_agent import IntentAnalysisAgent
 from agent.planner_agent import PlannerAgent
 from agent.tool_executor import ToolExecutor
@@ -25,9 +24,8 @@ class WorkflowGraph:
         self.orchestration_max_attempts = config.get("orchestration_max_attempts", 3)
 
         self.agents = {
-            LLMType.INIT_ROUTER_AGENT.value: InitRouterAgent(),
-            LLMType.SMALLTALK_AGENT.value: SmallTalkAgent(),
             LLMType.CLARIFICATION_AGENT.value: ClarificationAgent(),
+            LLMType.SMALLTALK_AGENT.value: SmallTalkAgent(),
             LLMType.NEEDS_MORE_DETAIL_AGENT.value: MoreDetailAgent(),
             LLMType.REFINED_QUERY_AGENT.value: RefinedQueryAgent(),
             LLMType.INTENT_ANALYSIS_AGENT.value: IntentAnalysisAgent(),
@@ -48,7 +46,6 @@ class WorkflowGraph:
         workflow = StateGraph(WorkflowState)
 
         # Add all nodes
-        workflow.add_node(LLMType.INIT_ROUTER_AGENT.value, self._init_router_agent)
         workflow.add_node(LLMType.CLARIFICATION_AGENT.value, self._clarification_agent)
         workflow.add_node(LLMType.SMALLTALK_AGENT.value, self._smalltalk_agent)
         workflow.add_node(LLMType.NEEDS_MORE_DETAIL_AGENT.value, self._needs_more_detail_agent)
@@ -66,24 +63,14 @@ class WorkflowGraph:
         workflow.add_node(LLMType.ORCHESTRATION_REFLECTION_AGENT.value, self._orchestration_reflection_agent)
 
         # Set entry point
-        workflow.set_entry_point(LLMType.INIT_ROUTER_AGENT.value)
+        workflow.set_entry_point(LLMType.CLARIFICATION_AGENT.value)
 
-        # Router decides: clear question -> intent analysis, ambiguous -> clarification
-        workflow.add_conditional_edges(
-            LLMType.INIT_ROUTER_AGENT.value,
-            self._route_after_init_router,
-            {
-                RoutingDecision.CLEAR_QUESTION.value: LLMType.INTENT_ANALYSIS_AGENT.value,
-                RoutingDecision.AMBIGUOUS.value: LLMType.CLARIFICATION_AGENT.value,
-                END: END,
-            }
-        )
-
-        # Clarification decides: smalltalk, needs more detail, or refine query
+        # Router decides all 4 routes directly (merged init + clarification logic)
         workflow.add_conditional_edges(
             LLMType.CLARIFICATION_AGENT.value,
             self._route_after_clarification,
             {
+                RoutingDecision.CLEAR_QUESTION.value: LLMType.INTENT_ANALYSIS_AGENT.value,
                 RoutingDecision.SMALLTALK.value: LLMType.SMALLTALK_AGENT.value,
                 RoutingDecision.NEEDS_MORE_DETAIL.value: LLMType.NEEDS_MORE_DETAIL_AGENT.value,
                 RoutingDecision.PROCESS_QUERY.value: LLMType.REFINED_QUERY_AGENT.value,
@@ -140,15 +127,24 @@ class WorkflowGraph:
 
         return workflow.compile()
 
-    def _route_after_init_router(self, state: WorkflowState) -> str:
+    def _route_after_clarification(self, state: WorkflowState) -> str:
         routing_decision = state.get("routing_decision", "")
 
         if routing_decision == RoutingDecision.CLEAR_QUESTION.value:
+            logger.info("[WorkflowGraph] Router: clear_question → Intent Analysis")
             return RoutingDecision.CLEAR_QUESTION.value
-        elif routing_decision == RoutingDecision.AMBIGUOUS.value:
-            return RoutingDecision.AMBIGUOUS.value
+        elif routing_decision == RoutingDecision.SMALLTALK.value:
+            logger.info("[WorkflowGraph] Router: smalltalk → Smalltalk Agent")
+            return RoutingDecision.SMALLTALK.value
+        elif routing_decision == RoutingDecision.NEEDS_MORE_DETAIL.value:
+            logger.info("[WorkflowGraph] Router: needs_more_detail → More Detail Agent")
+            return RoutingDecision.NEEDS_MORE_DETAIL.value
+        elif routing_decision == RoutingDecision.PROCESS_QUERY.value:
+            logger.info("[WorkflowGraph] Router: process_query → Refined Query Agent")
+            return RoutingDecision.PROCESS_QUERY.value
         else:
-            return RoutingDecision.AMBIGUOUS.value
+            logger.warning(f"[WorkflowGraph] Unknown routing decision: {routing_decision}, defaulting to needs_more_detail")
+            return RoutingDecision.NEEDS_MORE_DETAIL.value
 
     def _route_after_intent_analysis(self, state: WorkflowState) -> str:
         routing_decision = state.get("routing_decision", "")
@@ -159,21 +155,6 @@ class WorkflowGraph:
             return RoutingDecision.USE_WEB_SEARCH.value
         else:
             return RoutingDecision.USE_RAG.value
-
-    def _route_after_clarification(self, state: WorkflowState) -> str:
-        routing_decision = state.get("routing_decision", "")
-
-        if routing_decision == RoutingDecision.SMALLTALK.value:
-            return RoutingDecision.SMALLTALK.value
-        elif routing_decision == RoutingDecision.NEEDS_MORE_DETAIL.value:
-            return RoutingDecision.NEEDS_MORE_DETAIL.value
-        elif routing_decision == RoutingDecision.PROCESS_QUERY.value:
-            return RoutingDecision.PROCESS_QUERY.value
-        else:
-            logger.warning(
-                f"[WorkflowGraph] Unknown clarification decision: {routing_decision}"
-            )
-            return END
 
     def _route_after_rag_reflection(self, state: WorkflowState) -> str:
         routing_decision = state.get("routing_decision", "")
@@ -200,10 +181,6 @@ class WorkflowGraph:
                 return END
             return LLMType.PLANNER_AGENT.value
 
-    async def _init_router_agent(self, state: WorkflowState) -> WorkflowState:
-        resp = await self.agents[LLMType.INIT_ROUTER_AGENT.value].invoke(state)
-        return resp
-    
     async def _clarification_agent(self, state: WorkflowState) -> WorkflowState:
         resp = await self.agents[LLMType.CLARIFICATION_AGENT.value].invoke(state)
         return resp

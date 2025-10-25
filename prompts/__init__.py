@@ -1,5 +1,4 @@
-from .router_agent_prompt import ROUTER_AGENT_PROMPT
-from .clarification_agent_prompt import CLARIFICATION_ROUTING_PROMPT
+from .clarification_agent_prompt import CLARIFICATION_AGENT_PROMPT
 from .smalltalk_agent_prompt import SMALLTALK_AGENT_PROMPT
 from .more_detail_agent_prompt import MORE_DETAIL_AGENT_PROMPT
 from .refined_agent_prompt import REFINED_QUERY_AGENT_PROMPT
@@ -13,8 +12,7 @@ from .planner_context_templates import (
 )
 
 __all__ = [
-    "ROUTER_AGENT_PROMPT",
-    "CLARIFICATION_ROUTING_PROMPT",
+    "CLARIFICATION_AGENT_PROMPT",
     "SMALLTALK_AGENT_PROMPT",
     "MORE_DETAIL_AGENT_PROMPT",
     "REFINED_QUERY_AGENT_PROMPT",
