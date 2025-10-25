@@ -70,7 +70,6 @@ SYNTHESIZER_AGENT_PROMPT = ChatPromptTemplate.from_messages([
     {web_context}
 
     ### Additional Metadata:
-    - Confidence Score: {confidence_score}
     - Number of Documents: {num_documents}
     - Web Search Used: {used_web_search}
 

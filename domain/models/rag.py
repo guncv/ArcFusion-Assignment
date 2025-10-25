@@ -25,6 +25,12 @@ class RAGQueryRequest(BaseModel):
     query: str = Field(description="User query")
 
 
+class RAGRetrievalTestResponse(BaseModel):
+    query: str = Field(description="Original query")
+    documents: List[dict] = Field(description="Retrieved documents with content and metadata")
+    document_count: int = Field(description="Number of documents retrieved")
+
+
 class RAGQueryResponse(BaseModel):
     answer: str = Field(description="Generated answer")
     sources: List[DocumentSource] = Field(description="Source documents")
@@ -40,3 +46,17 @@ class RAGStatsResponse(BaseModel):
     embedding_model: str = Field(description="Embedding model used")
     web_search_enabled: bool = Field(description="Web search enabled")
     top_k: int = Field(description="Default top-k for retrieval")
+
+
+class ChunkingComparisonRequest(BaseModel):
+    pdf_path: str = Field(description="Path to PDF file for testing")
+    strategies: Optional[List[str]] = Field(
+        default=["recursive", "semantic_sentence"],
+        description="List of chunking strategies to compare"
+    )
+
+
+class ChunkingComparisonResponse(BaseModel):
+    pdf_path: str = Field(description="PDF file that was tested")
+    strategies_tested: List[str] = Field(description="Strategies that were tested")
+    results: dict = Field(description="Comparison results for each strategy")

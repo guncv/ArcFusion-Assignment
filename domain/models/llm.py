@@ -7,7 +7,10 @@ class LLMRequest(BaseModel):
     user_input: str
 
 class LLMResponse(BaseModel):
-    message: str
+    response: str
 
 class ClearHistoryResponse(BaseModel):
     message: str
+
+class WebSearchRequest(BaseModel):
+    query: str

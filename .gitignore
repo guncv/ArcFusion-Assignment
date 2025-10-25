@@ -63,3 +63,7 @@ docs/_build/
 llm/app/uploaded_files/*
 
 gcp_secret_key.json
+
+# ChromaDB vector database files
+.chroma/
+.claude/

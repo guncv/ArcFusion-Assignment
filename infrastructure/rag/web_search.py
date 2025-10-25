@@ -2,9 +2,7 @@ import os
 import requests
 from typing import List, Dict, Any, Optional
 from langchain_core.documents import Document
-from core.log.logger import logger
 from core.config.config import nested_config as config
-
 
 class TavilyWebSearch:
     def __init__(self):
@@ -31,14 +29,12 @@ class TavilyWebSearch:
                 timeout=10
             )
             
-            logger.info(f"[TavilyWebSearch] Response: {response.json()}")
             response.raise_for_status()
             data = response.json()
             results = data.get("results", [])
 
             return results
         except Exception as e:
-            logger.error(f"[TavilyWebSearch] Error during search: {e}")
             return []
 
     def search_as_documents(self,query: str) -> List[Document]:
@@ -65,10 +61,6 @@ class TavilyWebSearch:
                 }
             )
             documents.append(doc)
-
-        logger.info(
-            f"[TavilyWebSearch] Converted {len(results)} search results to documents"
-        )
 
         return documents
 

@@ -1,5 +1,4 @@
 from langgraph.graph import END
-from core.log.logger import logger
 from domain.enums.workflow_state import WorkflowState
 from infrastructure.llm.loader import loadLLM, getChatHistory
 from domain.enums.llm_type import LLMType
@@ -29,7 +28,6 @@ class RefinedQueryAgent:
                 "user_query": response,
             }
         except Exception as e:
-            logger.error(f"[ClarificationAgent] Error during invoke: {e}", exc_info=True)
             raise ArcFusionException(
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"ClarificationAgent error: [{type(e).__name__}]: {str(e)}",

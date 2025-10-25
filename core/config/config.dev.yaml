@@ -1,21 +1,31 @@
-router_agent:
+workflow:
+  orchestration_max_attempts: 2
+
+init_router_agent:
   model: gpt-3.5-turbo
   api_provider: openai
   temperature: 0.0
   api_key: ${OPENAI_API_KEY}
-  max_tokens: 100
-
-smalltalk_agent:
-  model: gpt-3.5-turbo
-  api_provider: openai
-  temperature: 0.5
-  api_key: ${OPENAI_API_KEY}
-  max_tokens: 500
+  max_tokens: 200
 
 clarification_agent:
   model: gpt-4o-mini
   api_provider: openai
   temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+intent_analysis_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 200
+
+smalltalk_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.5
   api_key: ${OPENAI_API_KEY}
   max_tokens: 500
 
@@ -33,20 +43,47 @@ refined_query_agent:
   api_key: ${OPENAI_API_KEY}
   max_tokens: 1000
 
-synthesizer_agent:
+rag_synthesizer_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.2
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 1500
+
+rag_reflection_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+planner_agent:
   model: gpt-4o-mini
   api_provider: openai
   temperature: 0.3
   api_key: ${OPENAI_API_KEY}
-  max_tokens: 2000
+  max_tokens: 500
 
-reflection_agent:
-  model: gpt-4o-mini
+orchestration_synthesizer_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.3
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 2500
+
+orchestration_reflection_agent:
+  model: gpt-3.5-turbo
   api_provider: openai
   temperature: 0.0
   api_key: ${OPENAI_API_KEY}
   max_tokens: 800
-  max_synthesis_attempts: 3
+  max_synthesis_attempts: 2
+
+langsmith:
+  enabled: false
+  api_key: "${LANGCHAIN_API_KEY}"
+  project_name: "ArcFusionGraph"
+  endpoint: "https://eu.api.smith.langchain.com"
 
 tools:
   enabled: true
@@ -79,20 +116,32 @@ vector_db:
 rag:
   auto_ingestion:
     enabled: true
-    documents_directory: "./documents"
+    documents_directory: ["./documents"]
     clear_existing: false
     on_startup: true
+
+  embedding_model: "text-embedding-3-small"
+  embedding_api_key: "${OPENAI_API_KEY}"
     
   chunking:
-    chunk_size: 1000
-    chunk_overlap: 200
+    chunk_size: 300
+    chunk_overlap: 50
     separators: null
+    strategy: "semantic_llamaindex"
+    semantic_model: "text-embedding-3-small"
+    semantic_similarity_threshold: 0.7
+    semantic_min_chunk_size: null
+    llamaindex_buffer_size: 1
+    llamaindex_breakpoint_threshold: 85
 
   retrieval:
     top_k: 5
     vector_weight: 0.7
     bm25_weight: 0.3
     use_ensemble: true
+    use_reranker: true
+    reranker_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    reranker_top_n: 5
 
   confidence_evaluation:
     min_confidence_threshold: 0.6
@@ -102,7 +151,7 @@ rag:
   web_search:
     enabled: true
     api_key: "${TAVILY_API_KEY}"
-    max_results: 5
+    max_results: 3
     search_depth: "advanced"
 
   generation:
@@ -126,3 +175,9 @@ chat_history:
 
   file:
     persist_dir: "./data/chat_history"
+
+langsmith:
+  enabled: ${LANGCHAIN_TRACING_V2:false}
+  api_key: ${LANGCHAIN_API_KEY:}
+  project_name: ${LANGCHAIN_PROJECT:arcfusion-dev}
+  endpoint: ${LANGCHAIN_ENDPOINT:https://api.smith.langchain.com}

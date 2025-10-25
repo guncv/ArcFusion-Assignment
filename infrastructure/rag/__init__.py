@@ -1,18 +1,11 @@
 from .document_processor import DocumentProcessor
 from .web_search import TavilyWebSearch
-from .rag_pipeline import RAGPipeline
+from .auto_ingestion import AutoIngestionManager
 
 # Lazy singleton instances
-_rag_pipeline_instance = None
 _tavily_web_search_instance = None
 _document_processor_instance = None
-
-def get_rag_pipeline() -> RAGPipeline:
-    """Get the RAGPipeline singleton instance."""
-    global _rag_pipeline_instance
-    if _rag_pipeline_instance is None:
-        _rag_pipeline_instance = RAGPipeline()
-    return _rag_pipeline_instance
+_auto_ingestion_manager_instance = None
 
 def get_tavily_web_search() -> TavilyWebSearch:
     """Get the TavilyWebSearch singleton instance."""
@@ -29,10 +22,10 @@ def get_document_processor() -> DocumentProcessor:
     return _document_processor_instance
 
 __all__ = [
-    "RAGPipeline",
     "TavilyWebSearch",
     "DocumentProcessor",
-    "get_rag_pipeline",
+    "AutoIngestionManager",
     "get_tavily_web_search",
     "get_document_processor",
+    "get_auto_ingestion_manager",
 ]

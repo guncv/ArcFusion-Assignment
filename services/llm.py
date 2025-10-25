@@ -1,16 +1,18 @@
+from typing import List
+from langchain_core.documents import Document
 import requests
 from domain.models.llm import HealthCheckResp, LLMRequest, LLMResponse, ClearHistoryResponse
-from core.log.logger import logger
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
 from infrastructure.llm.workflow_graph import WorkflowGraph
-from infrastructure.llm.loader import clearChatHistory
 from core.constants.constants import session_id_key
+from infrastructure.rag import get_tavily_web_search
 
 class LLMService:
     def __init__(self):
         self.workflow_graph = WorkflowGraph()
-    
+        self.web_search_tool = get_tavily_web_search()
+        
     async def health_check(self) -> HealthCheckResp:
         try:
             resp = HealthCheckResp(
@@ -19,7 +21,6 @@ class LLMService:
             return resp
         
         except Exception as e:
-            logger.error(f"[Health Check Error]: {e}")
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
 
     async def llm_service(self, req: LLMRequest) -> LLMResponse:
@@ -27,49 +28,22 @@ class LLMService:
             resp = await self.workflow_graph.invoke(req.user_input, session_id_key)
 
             return LLMResponse(
-                message=resp.get("response", "No response generated")
+                response=resp.get("response", "No response generated")
             )
-
+            
         except Exception as e:
-            logger.error(f"[LLM Service Error]: {e}")
-            raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
-
-    async def clear_chat_history(self):
-        try:
-            success = clearChatHistory(session_id_key)
-            if success:
-                return
-            else:
-                raise ArcFusionException(
-                    error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
-                    description="Failed to clear chat history"
-                )
-
-        except ArcFusionException:
-            raise
-        except Exception as e:
-            logger.error(f"[Clear History Error]: {e}")
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
         
-    async def test_web_search(self) -> str:
+    async def clear_chat_history(self) -> ClearHistoryResponse:
         try:
-            API_KEY = "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"
-            query = "latest trends in LangGraph multi-agent orchestration"
-
-            resp = requests.post(
-                "https://api.tavily.com/search",
-                headers={"Authorization": f"Bearer {API_KEY}"},
-                json={
-                    "query": query,
-                    "max_results": 5,
-                    "include_domains": [],
-                    "search_depth": "advanced"
-                }
-            )
-
-            data = resp.json()
-            return data
-
+            self.workflow_graph.clear_chat_history()
+            return ClearHistoryResponse(message="Chat history cleared successfully")
         except Exception as e:
-            logger.error(f"[Test Web Search Error]: {e}")
+            raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
+        
+    async def web_search(self, query: str) -> List[Document]:
+        try:
+            results = self.web_search_tool.search_as_documents(query)
+            return results
+        except Exception as e:
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")

@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import TypedDict, Optional
+from typing import TypedDict, Optional, List, Dict, Any
+from langchain_core.documents import Document
 
 class RoutingDecision(Enum):
     # Router Agent decisions
@@ -10,29 +11,54 @@ class RoutingDecision(Enum):
     SMALLTALK = "smalltalk"
     NEEDS_MORE_DETAIL = "needs_more_detail"
     PROCESS_QUERY = "process_query"
-    
+
+    # Intent Analysis Agent decisions
+    USE_RAG = "use_rag"  # Question can be answered from documents
+    USE_WEB_SEARCH = "use_web_search"  # Question needs real-time/web data
+
+    # RAG Reflection Agent decisions
+    RAG_SUFFICIENT = "rag_sufficient"
+    RAG_INSUFFICIENT = "rag_insufficient"
+    NOT_RELEVANT = "not_relevant"
+
+class ToolType(Enum):
+    # Tool selection for planner
+    RAG_SEARCH = "rag_search"  # Search internal documents/knowledge base
+    WEB_SEARCH = "web_search"  # Search external web sources
+    NONE = "none"  # No search needed
+
+class RetrievedDocument(TypedDict):
+    document: Document
+    score: float
+
 class WorkflowState(TypedDict, total=False):
     user_query: str
     session_id: str
     routing_decision: str
-    refined_query: str
-
+    
     # RAG-related fields
-    retrieved_documents: list
-    retrieval_scores: list
-    confidence_score: float
-    needs_web_search: bool
-    web_search_results: list
+    retrieved_documents_with_scores: List[RetrievedDocument]
+    
+    # RAG Synthesizer fields
+    rag_synthesizer_response: str = ""
+    
+    # RAG Reflection fields
+    rag_reflection_comment: str
+
+    # Planning fields
+    selected_tool: str  # Tool selected by planner: ToolType enum values
+    generated_queries: list
+    web_search_results: list  # Only populated for web_search tasks
+
+    # Orchestration Reflection fields
+    is_answer_sufficient: bool = False
+    reflection_issues: str
+    orchestration_attempts: int = 0
+    old_queries: list  # Previous queries from previous orchestration attempts
+
+    # Feedback loop history tracking (for debugging and analysis)
+    orchestration_history: List[Dict[str, Any]]  # List of iteration attempts with details
 
     # Response fields
     response: str
-    sources: list
-
-    # Reflection fields
-    synthesis_attempts: int
-    is_answer_sufficient: bool
-    answer_quality_score: float
-    reflection_issues: list
-    reflection_suggestions: list
-
     error_message: Optional[str]
