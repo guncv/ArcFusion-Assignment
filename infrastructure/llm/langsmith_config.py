@@ -1,7 +1,6 @@
 from typing import Optional, Dict, Any
 from langsmith import Client
 from core.config.config import nested_config as config
-from core.log.logger import logger
 
 class LangSmithTracer:
 
@@ -19,7 +18,6 @@ class LangSmithTracer:
                 try:
                     self.client = Client(api_key=self.api_key, api_url=self.endpoint)
                 except Exception as e:
-                    logger.error(f"[LangSmith] Failed to initialize client: {e}")
                     self.enabled = False
                     self.client = None
         else:

@@ -1,6 +1,5 @@
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
-from core.log.logger import logger
 from domain.enums.workflow_state import RoutingDecision, WorkflowState
 from domain.enums.llm_type import LLMType
 from infrastructure.llm.loader import loadLLM
@@ -38,7 +37,6 @@ def finalize_rag_reflection(routing_decision: str, comment: str) -> str:
     valid_decisions = [RoutingDecision.RAG_SUFFICIENT.value, RoutingDecision.RAG_INSUFFICIENT.value]
 
     if cleaned_decision not in valid_decisions:
-        logger.error(f"[Tool - finalize_rag_reflection] Attempted to finalize invalid decision: {routing_decision}")
         result = RAGReflectionResult(
             routing_decision="invalid_decision",
             comment="Invalid routing decision"
@@ -68,14 +66,12 @@ class RAGReflectionAgent:
             rag_synthesizer_response = state.get("rag_synthesizer_response", "")
 
             if not rag_synthesizer_response or rag_synthesizer_response.strip() == "":
-                logger.info(f"[RAGReflectionAgent] Empty synthesizer response for query: {user_query[:100]}... - marking as rag_insufficient")
                 return {
                     **state,
                     "routing_decision": RoutingDecision.NOT_RELEVANT.value,
                     "rag_reflection_comment": "No relevant documents found in knowledge base. Please use web search to answer the question.",
                 }
 
-            logger.info(
                 f"[RAGReflectionAgent] Evaluating RAG sufficiency for query: {user_query[:100]}..."
             )
 
@@ -105,7 +101,6 @@ class RAGReflectionAgent:
                             if isinstance(tool_content, str):
                                 # Handle empty string case
                                 if not tool_content.strip():
-                                    logger.warning(f"[RAGReflectionAgent] Tool content is empty string")
                                     continue
                                 tool_result = json.loads(tool_content)
                             else:
@@ -116,16 +111,12 @@ class RAGReflectionAgent:
                             
                             # If we get a valid decision from tool, use it immediately
                             if decision and decision in [RoutingDecision.RAG_SUFFICIENT.value, RoutingDecision.RAG_INSUFFICIENT.value]:
-                                logger.info(f"[RAGReflectionAgent] Found valid tool result: {decision}")
                                 return {
                                     **state,
                                     "routing_decision": decision,
                                     "rag_reflection_comment": comment,
                                 }
                         except (json.JSONDecodeError, AttributeError) as e:
-                            logger.warning(f"[RAGReflectionAgent] Failed to parse tool content: {e}")
-                            logger.debug(f"[RAGReflectionAgent] Tool content was: '{tool_content}' (type: {type(tool_content)})")
-
                 # 3.2 If it's an AIMessage that triggered tool calls
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
                     for tool_call in msg.tool_calls:
@@ -135,7 +126,6 @@ class RAGReflectionAgent:
                             comment = args.get("comment", "")
                             # If we have a valid decision from tool call, use it immediately
                             if decision and decision in [RoutingDecision.RAG_SUFFICIENT.value, RoutingDecision.RAG_INSUFFICIENT.value]:
-                                logger.info(f"[RAGReflectionAgent] Found valid tool call: {decision}")
                                 return {
                                     **state,
                                     "routing_decision": decision,
@@ -146,25 +136,18 @@ class RAGReflectionAgent:
             last_message = messages[-1] if messages else None
             if last_message and hasattr(last_message, "content"):
                 decision = getattr(last_message, "content", "").strip()
-                logger.warning(f"[RAGReflectionAgent] No valid tool call found, using last message content: {decision}")
             else:
                 decision = RoutingDecision.RAG_INSUFFICIENT.value
-                logger.warning(f"[RAGReflectionAgent] No decision found, using fallback: {decision}")
-
             # Step 5: Validate and normalize decision
             if decision:
                 decision = str(decision).strip().lower()
-                logger.info(f"[RAGReflectionAgent] Extracted decision: '{decision}'")
-
             if decision not in [
                 RoutingDecision.RAG_SUFFICIENT.value,
                 RoutingDecision.RAG_INSUFFICIENT.value,
             ]:
-                logger.warning(f"[RAGReflectionAgent] Unexpected output: {decision} → fallback to 'rag_insufficient'")
                 decision = RoutingDecision.RAG_INSUFFICIENT.value
 
             # Step 6: Return updated state
-            logger.info(f"[RAGReflectionAgent] Final decision: {decision}")
             return {
                 **state,
                 "routing_decision": decision,
@@ -172,8 +155,6 @@ class RAGReflectionAgent:
             }
 
         except Exception as e:
-            logger.error(f"[RAGReflectionAgent] Error during reflection: {e}", exc_info=True)
-
             raise ArcFusionException(
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"RAGReflectionAgent error: [{type(e).__name__}]: {str(e)}",

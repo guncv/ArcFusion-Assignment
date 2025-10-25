@@ -1,7 +1,6 @@
 from typing import List
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
-from core.log.logger import logger
 from domain.enums.workflow_state import WorkflowState
 from domain.enums.llm_type import LLMType
 from infrastructure.llm.loader import loadLLM
@@ -19,15 +18,18 @@ class OrchestrationSynthesizerAgent:
             query = state.get("user_query", "")
             documents = state.get("rag_synthesizer_response", "")
             web_results = state.get("web_search_results", [])
+            rag_documents = state.get("retrieved_documents_with_scores", [])
             old_response = state.get("response", "")
             
             rag_context = self._format_rag_context(documents)
             web_context = self._format_web_context(web_results)
+            rag_docs_context = self._format_rag_documents_context(rag_documents)
 
             response = await self.chain.ainvoke({
                 "user_query": query,
                 "rag_context": rag_context,
                 "web_context": web_context,
+                "rag_docs_context": rag_docs_context,
                 "old_response": old_response,
             })
 
@@ -37,7 +39,6 @@ class OrchestrationSynthesizerAgent:
             }
 
         except Exception as e:
-            logger.error(f"[Orchestration Synthesizer] Error during synthesis: {e}", exc_info=True)
             raise ArcFusionException(
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"Orchestration Synthesizer error: [{type(e).__name__}]: {str(e)}",
@@ -65,5 +66,38 @@ class OrchestrationSynthesizerAgent:
                 f"URL: {url}\n"
                 f"Content: {content}\n"
             )
+
+        return "\n".join(context_parts)
+
+    def _format_rag_documents_context(self, rag_documents: List) -> str:
+        if not rag_documents:
+            return "No RAG documents retrieved."
+
+        context_parts = ["RAG Retrieved Documents:\n"]
+        for i, doc_item in enumerate(rag_documents, 1):
+            if isinstance(doc_item, dict) and "document" in doc_item:
+                # Handle RetrievedDocument format with score
+                doc = doc_item["document"]
+                score = doc_item.get("score", 0.0)
+                content = doc.page_content
+                metadata = doc.metadata
+                title = metadata.get("title", "Untitled")
+                
+                context_parts.append(
+                    f"[RAG Document {i}] (Score: {score:.3f})\n"
+                    f"Title: {title}\n"
+                    f"Content: {content}\n"
+                )
+            else:
+                # Handle direct Document format
+                content = doc_item.page_content if hasattr(doc_item, 'page_content') else str(doc_item)
+                metadata = doc_item.metadata if hasattr(doc_item, 'metadata') else {}
+                title = metadata.get("title", "Untitled")
+                
+                context_parts.append(
+                    f"[RAG Document {i}]\n"
+                    f"Title: {title}\n"
+                    f"Content: {content}\n"
+                )
 
         return "\n".join(context_parts)

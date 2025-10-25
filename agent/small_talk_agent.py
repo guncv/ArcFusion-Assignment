@@ -1,4 +1,3 @@
-from core.log.logger import logger
 from domain.enums.workflow_state import WorkflowState
 from infrastructure.llm.loader import loadLLM, getChatHistory
 from domain.enums.llm_type import LLMType
@@ -29,7 +28,6 @@ class SmallTalkAgent:
             }
 
         except Exception as e:
-            logger.error(f"[SmallTalkAgent] Error during invoke: {e}", exc_info=True)
             raise ArcFusionException(
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"SmallTalkAgent error: [{type(e).__name__}]: {str(e)}",

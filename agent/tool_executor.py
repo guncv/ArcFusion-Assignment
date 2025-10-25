@@ -1,67 +1,80 @@
-from core.log.logger import logger
-from domain.enums.workflow_state import WorkflowState
+from domain.enums.workflow_state import WorkflowState, ToolType
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
 import asyncio
 from agent.web_search_agent import WebSearchAgent
+from agent.rag_retrieval_agent import RAGRetrievalAgent
 
 class ToolExecutor:
     def __init__(self):
         self.web_search_agent = WebSearchAgent()
+        self.rag_retrieval_agent = RAGRetrievalAgent()
 
     async def invoke(self, state: WorkflowState) -> WorkflowState:
         try:
+            # Get selected tool and queries from planner
+            selected_tool = state.get("selected_tool", ToolType.WEB_SEARCH.value)
             generated_queries = state.get("generated_queries", [])
-            logger.info(f"[ToolExecutor] Generated queries: {generated_queries}")
+            
+            # Handle 'none' tool - no search needed
+            if selected_tool == ToolType.NONE.value:
+                return {
+                    **state,
+                    "web_search_results": [],
+                    "retrieved_documents_with_scores": [],
+                }
 
+            # Default to user query if no queries generated
             if not generated_queries:
                 user_query = state.get("user_query", "")
                 generated_queries = [{"query": user_query, "purpose": "Answer user question"}]
 
-            num_workers = len(generated_queries)
-
+            # Spawn parallel workers based on selected tool
             worker_tasks = []
             for i, query_obj in enumerate(generated_queries, 1):
                 query_text = query_obj.get("query", "")
                 query_purpose = query_obj.get("purpose", "")
 
-                task = self.web_search_agent.invoke(query_text, query_purpose)
+                # Route to appropriate agent
+                if selected_tool == ToolType.RAG_SEARCH.value:
+                    task = self.rag_retrieval_agent.search(query_text, query_purpose)
+                else:  # web_search (default)
+                    task = self.web_search_agent.invoke(query_text, query_purpose)
+
                 worker_tasks.append(task)
 
             raw_results = await asyncio.gather(*worker_tasks, return_exceptions=True)
 
-            web_results = []
+            # Aggregate results from all workers
+            search_results = []
             successful_workers = 0
             failed_workers = 0
 
             for i, result in enumerate(raw_results, 1):
                 if isinstance(result, Exception):
-                    logger.error(f"[ToolExecutor] Worker-{i} FAILED: {result}")
                     failed_workers += 1
                     continue
 
                 if isinstance(result, list):
-                    web_results.extend(result)
+                    search_results.extend(result)
                     successful_workers += 1
-                    logger.info(f"[ToolExecutor] Worker-{i} SUCCESS: {len(result)} results")
                 else:
-                    web_results.append(result)
+                    search_results.append(result)
                     successful_workers += 1
-                    logger.info(f"[ToolExecutor] Worker-{i} SUCCESS: 1 result")
 
-            logger.info(
-                f"[ToolExecutor] ✅ Parallel execution complete: "
-                f"{successful_workers}/{num_workers} workers succeeded, "
-                f"{len(web_results)} total results"
-            )
-
-            return {
-                **state,
-                "web_search_results": web_results,
-            }
+            # Store results in state based on tool type
+            if selected_tool == ToolType.RAG_SEARCH.value:
+                return {
+                    **state,
+                    "retrieved_documents_with_scores": search_results,
+                }
+            else:  # web_search
+                return {
+                    **state,
+                    "web_search_results": search_results,
+                }
 
         except Exception as e:
-            logger.error(f"[ToolExecutor] Error during invoke: {e}", exc_info=True)
             raise ArcFusionException(
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"ToolExecutor error: [{type(e).__name__}]: {str(e)}",

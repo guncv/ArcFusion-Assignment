@@ -6,7 +6,6 @@ from llama_index.core.schema import TextNode
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.openai import OpenAIEmbedding
 import chromadb
-from core.log.logger import logger
 from core.config.config import nested_config as config
 
 
@@ -46,7 +45,6 @@ class VectorStoreManager:
 
     def add_documents(self, nodes: List[TextNode], batch_size: int = 100):
         if not nodes:
-            logger.warning("[VectorStoreManager] No nodes to add")
             return []
 
         try:
@@ -63,7 +61,6 @@ class VectorStoreManager:
             return all_ids
 
         except Exception as e:
-            logger.error(f"[VectorStoreManager] Error adding nodes: {e}")
             raise
 
     def get_retriever(self, similarity_top_k: int = 3):

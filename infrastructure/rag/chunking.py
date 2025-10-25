@@ -1,6 +1,5 @@
 from typing import List
 from core.config.config import nested_config as config
-from core.log.logger import logger
 from llama_index.core.node_parser import SemanticSplitterNodeParser
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.schema import Document as LlamaDocument, TextNode
@@ -37,7 +36,6 @@ class ChunkingManager:
                     all_nodes.append(node)
 
             except Exception as e:
-                logger.warning(f"[ChunkingManager] Error processing document with semantic splitter: {e}")
                 fallback_node = TextNode(
                     text=doc.text,
                     metadata={**doc.metadata, "chunk_id": 0, "chunk_size": len(doc.text)}

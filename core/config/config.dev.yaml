@@ -1,6 +1,13 @@
 workflow:
   orchestration_max_attempts: 2
 
+init_router_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 200
+
 clarification_agent:
   model: gpt-4o-mini
   api_provider: openai

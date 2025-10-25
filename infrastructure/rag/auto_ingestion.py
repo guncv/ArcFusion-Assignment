@@ -1,6 +1,5 @@
 from typing import Optional, List
 from pathlib import Path
-from core.log.logger import logger
 from core.config.config import nested_config as config
 from infrastructure.rag.document_processor import DocumentProcessor
 
@@ -43,5 +42,4 @@ class AutoIngestionManager:
 
             return {"status": "success", "chunks": chunks, "files_processed": len(pdf_files)}
         except Exception as e:
-            logger.error(f"[AutoIngestion] Error during auto-ingestion: {e}", exc_info=True)
             return {"status": "failed", "error": str(e)}

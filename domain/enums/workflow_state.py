@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TypedDict, Optional, List
+from typing import TypedDict, Optional, List, Dict, Any
 from langchain_core.documents import Document
 
 class RoutingDecision(Enum):
@@ -21,6 +21,12 @@ class RoutingDecision(Enum):
     RAG_INSUFFICIENT = "rag_insufficient"
     NOT_RELEVANT = "not_relevant"
 
+class ToolType(Enum):
+    # Tool selection for planner
+    RAG_SEARCH = "rag_search"  # Search internal documents/knowledge base
+    WEB_SEARCH = "web_search"  # Search external web sources
+    NONE = "none"  # No search needed
+
 class RetrievedDocument(TypedDict):
     document: Document
     score: float
@@ -40,14 +46,18 @@ class WorkflowState(TypedDict, total=False):
     rag_reflection_comment: str
 
     # Planning fields
+    selected_tool: str  # Tool selected by planner: ToolType enum values
     generated_queries: list
-    web_search_results: list
+    web_search_results: list  # Only populated for web_search tasks
 
     # Orchestration Reflection fields
     is_answer_sufficient: bool = False
     reflection_issues: str
     orchestration_attempts: int = 0
     old_queries: list  # Previous queries from previous orchestration attempts
+
+    # Feedback loop history tracking (for debugging and analysis)
+    orchestration_history: List[Dict[str, Any]]  # List of iteration attempts with details
 
     # Response fields
     response: str

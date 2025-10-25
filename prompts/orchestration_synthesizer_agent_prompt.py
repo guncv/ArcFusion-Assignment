@@ -29,8 +29,11 @@ ORCHESTRATION_SYNTHESIZER_AGENT_PROMPT = ChatPromptTemplate.from_messages([
     ### Previous Response (if any):
     {old_response}
 
-    ### RAG Documents:
+    ### RAG Documents (Processed):
     {rag_context}
+
+    ### RAG Retrieved Documents (Raw):
+    {rag_docs_context}
 
     ### Web Search Results:
     {web_context}

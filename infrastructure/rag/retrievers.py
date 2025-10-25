@@ -2,7 +2,6 @@ from typing import List
 from langchain_core.documents import Document as LangChainDocument
 from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.postprocessor import SentenceTransformerRerank
-from core.log.logger import logger
 from infrastructure.vector_db.vector_store import VectorStoreManager
 
 class RetrieverManager():
@@ -46,10 +45,7 @@ class RetrieverManager():
                     node_with_score.node.metadata["score"] = rerank_score
 
             langchain_docs = self._llamaindex_to_langchain(nodes_with_scores)
-            logger.info(f"[LlamaIndexRetriever] retrieved documents: {langchain_docs}")
-
             return langchain_docs
 
         except Exception as e:
-            logger.error(f"[LlamaIndexRetriever] Error during retrieval: {e}", exc_info=True)
             return []

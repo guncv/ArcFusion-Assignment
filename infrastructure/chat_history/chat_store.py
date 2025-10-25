@@ -10,7 +10,6 @@ from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from langchain_community.chat_message_histories import FileChatMessageHistory
 
 from core.config.config import nested_config as config
-from core.log.logger import logger
 
 
 class ChatHistoryStore:
@@ -37,8 +36,6 @@ class ChatHistoryStore:
                 
                 self._redis_client.ping()
             except Exception as e:
-                logger.error(f"[ChatHistoryStore] Failed to connect to Redis: {e}")
-                logger.warning("[ChatHistoryStore] Falling back to file-based storage")
                 self.backend = "file"
 
     def get_session_history(self, session_id: str) -> BaseChatMessageHistory:
@@ -58,7 +55,6 @@ class ChatHistoryStore:
             ttl=self.ttl,
         )
 
-        logger.debug(f"[ChatHistoryStore] Retrieved Redis history for session: {session_id}")
         return history
 
     def _get_file_history(self, session_id: str) -> FileChatMessageHistory:
@@ -74,7 +70,6 @@ class ChatHistoryStore:
         
         history = FileChatMessageHistory(file_path=file_path)
         
-        logger.debug(f"[ChatHistoryStore] Retrieved file history for session: {session_id}")
         return history
 
     def _get_redis_url(self) -> str:
@@ -100,17 +95,13 @@ class ChatHistoryStore:
             history.clear()
             return True
         except Exception as e:
-            logger.error(f"[ChatHistoryStore] Error clearing session {session_id}: {e}")
             return False
 
     def add_message(self, session_id: str, message: BaseMessage):
         try:
             history = self.get_session_history(session_id)
             history.add_message(message)
-            logger.debug(f"[ChatHistoryStore] Added {message.__class__.__name__} to session {session_id}")
         except Exception as e:
-            logger.error(f"[ChatHistoryStore] Error adding message to session {session_id}: {e}")
-
     def add_user_message(self, session_id: str, content: str):
         self.add_message(session_id, HumanMessage(content=content))
 
@@ -127,7 +118,6 @@ class ChatHistoryStore:
 
             return messages
         except Exception as e:
-            logger.error(f"[ChatHistoryStore] Error getting messages for session {session_id}: {e}")
             return []
 
 _chat_store: Optional[ChatHistoryStore] = None

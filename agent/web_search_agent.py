@@ -1,8 +1,8 @@
 from typing import List
 from langchain_core.documents import Document
-from core.log.logger import logger
 from domain.enums.workflow_state import WorkflowState
 from infrastructure.rag import get_tavily_web_search
+import asyncio
 
 class WebSearchAgent:
     def __init__(self):
@@ -10,7 +10,13 @@ class WebSearchAgent:
 
     async def invoke(self, query_text: str, query_purpose: str) -> List[Document]:
         try:
-            results: List[Document] = self.web_search.search_as_documents(query_text)
+            # Run the synchronous search in a thread pool to avoid blocking the event loop
+            loop = asyncio.get_event_loop()
+            results: List[Document] = await loop.run_in_executor(
+                None, 
+                self.web_search.search_as_documents, 
+                query_text
+            )
 
             # Filter results by relevance score (> 0.6)
             filtered_results = []
@@ -24,6 +30,4 @@ class WebSearchAgent:
             return filtered_results
 
         except Exception as e:
-            logger.error(f"[WebSearchAgent] Error during web search query: {query_text}: {e}", exc_info=True)
-
             return []

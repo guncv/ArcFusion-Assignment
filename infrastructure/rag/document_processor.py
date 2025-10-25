@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import List
-from core.log.logger import logger
 from llama_index.readers.file import UnstructuredReader
 from llama_index.core.schema import Document as LlamaDocument, TextNode
 from infrastructure.rag.chunking import ChunkingManager
@@ -27,7 +26,6 @@ class DocumentProcessor:
             return documents
 
         except Exception as e:
-            logger.error(f"[DocumentProcessor] Error extracting PDF {pdf_path}: {e}")
             raise ValueError(f"Failed to extract PDF: {str(e)}")
 
     def chunk_documents(self, documents: List[LlamaDocument]) -> List[TextNode]:
@@ -36,7 +34,6 @@ class DocumentProcessor:
             return chunked_nodes
 
         except Exception as e:
-            logger.error(f"[DocumentProcessor] Error chunking documents: {e}")
             raise
 
     def process_pdf(self, pdf_path: str) -> List[TextNode]:
@@ -52,7 +49,6 @@ class DocumentProcessor:
                 chunks = self.process_pdf(pdf_path)
                 all_chunks.extend(chunks)
             except Exception as e:
-                logger.error(f"[DocumentProcessor] Failed to process {pdf_path}: {e}")
                 continue
         
         self.vector_store.add_documents(all_chunks)

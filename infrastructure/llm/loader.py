@@ -1,7 +1,6 @@
 from typing import Any, Dict
 
 from core.config.config import nested_config as config
-from core.log.logger import logger
 from domain.enums.llm_type import LLMType
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -81,7 +80,6 @@ def clearChatHistory(session_id: str) -> bool:
         history.clear()
         return True
     except Exception as e:
-        logger.error(f"Error clearing chat history for session {session_id}: {e}")
         return False
 
 llm = LLM()

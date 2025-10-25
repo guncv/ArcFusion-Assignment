@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from core.log.logger import logger
 from domain.enums.workflow_state import WorkflowState
 from domain.enums.llm_type import LLMType
 from infrastructure.llm.loader import loadLLM
@@ -21,20 +20,38 @@ class OrchestrationReflectionAgent:
         try:
             user_query = state.get("user_query", "")
             generated_answer = state.get("response", "")
-            
+            orchestration_attempts = state.get("orchestration_attempts", 0)
+            orchestration_history = state.get("orchestration_history", [])
+
             response = await self.chain.ainvoke({
                 "user_query": user_query,
                 "generated_answer": generated_answer,
             })
 
+            is_sufficient = response.get("is_sufficient", False)
+            issues = response.get("issues", "No issues found")
+
+            # Add reflection result to history
+            if orchestration_history:
+                orchestration_history[-1]["reflection_result"] = {
+                    "is_sufficient": is_sufficient,
+                    "issues": issues,
+                    "answer_length": len(generated_answer),
+                }
+
+            # Increment orchestration_attempts if answer is insufficient
+            # This must be done here (not in routing function) for state to persist
+            new_attempts = orchestration_attempts + 1 if not is_sufficient else orchestration_attempts
+
             return {
                 **state,
-                "is_answer_sufficient": response.get("is_sufficient", False),
-                "reflection_issues": response.get("issues", "No issues found"),
+                "is_answer_sufficient": is_sufficient,
+                "reflection_issues": issues,
+                "orchestration_attempts": new_attempts,
+                "orchestration_history": orchestration_history,
             }
 
         except Exception as e:
-            logger.error(f"[OrchestrationReflectionAgent] Error during reflection: {e}", exc_info=True)
             raise ArcFusionException(
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"Orchestration Reflection Agent error: [{type(e).__name__}]: {str(e)}",

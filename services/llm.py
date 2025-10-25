@@ -2,7 +2,6 @@ from typing import List
 from langchain_core.documents import Document
 import requests
 from domain.models.llm import HealthCheckResp, LLMRequest, LLMResponse, ClearHistoryResponse
-from core.log.logger import logger
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
 from infrastructure.llm.workflow_graph import WorkflowGraph
@@ -22,7 +21,6 @@ class LLMService:
             return resp
         
         except Exception as e:
-            logger.error(f"[Health Check Error]: {e}")
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
 
     async def llm_service(self, req: LLMRequest) -> LLMResponse:
@@ -34,7 +32,6 @@ class LLMService:
             )
             
         except Exception as e:
-            logger.error(f"[LLM Service Error]: {e}")
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
         
     async def clear_chat_history(self) -> ClearHistoryResponse:
@@ -42,7 +39,6 @@ class LLMService:
             self.workflow_graph.clear_chat_history()
             return ClearHistoryResponse(message="Chat history cleared successfully")
         except Exception as e:
-            logger.error(f"[Clear Chat History Error]: {e}")
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
         
     async def web_search(self, query: str) -> List[Document]:
@@ -50,5 +46,4 @@ class LLMService:
             results = self.web_search_tool.search_as_documents(query)
             return results
         except Exception as e:
-            logger.error(f"[Web Search Error]: {e}")
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")

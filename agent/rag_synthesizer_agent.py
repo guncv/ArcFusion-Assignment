@@ -1,5 +1,4 @@
 from langchain_core.output_parsers import StrOutputParser
-from core.log.logger import logger
 from domain.enums.workflow_state import WorkflowState
 from domain.enums.llm_type import LLMType
 from infrastructure.llm.loader import loadLLM
@@ -19,7 +18,6 @@ class RAGSynthesizerAgent:
 
             # Check if there are any relevant documents
             if not retrieved_documents_with_scores or len(retrieved_documents_with_scores) == 0:
-                logger.info(f"[RAG Synthesizer] No relevant documents found for query: {query[:100]}...")
                 return {
                     **state,
                     "rag_synthesizer_response": "",
@@ -41,7 +39,6 @@ class RAGSynthesizerAgent:
                 "not outlined", "not summarized", "web search may be needed",
                 "additional information may be required", "further research may be necessary"
             ]):
-                logger.info(f"[RAG Synthesizer] Detected feedback response, returning empty")
                 response = ""
 
             return {
@@ -51,7 +48,6 @@ class RAGSynthesizerAgent:
             }
 
         except Exception as e:
-            logger.error(f"[RAG Synthesizer] Error during synthesis: {e}", exc_info=True)
             raise ArcFusionException(
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"RAG Synthesizer error: [{type(e).__name__}]: {str(e)}",

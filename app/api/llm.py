@@ -3,7 +3,6 @@ from fastapi import APIRouter
 from langchain_core.documents import Document
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
-from core.log.logger import logger
 from services.llm import LLMService
 from domain.models.llm import HealthCheckResp, LLMRequest, LLMResponse
 from domain.models.llm import WebSearchRequest
@@ -20,7 +19,6 @@ async def health_check_api() -> HealthCheckResp:
     except (ArcFusionException, Exception) as e:
         if type(e) != ArcFusionException:
             e = ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
-        logger.error(f"[Health Check API Error]: {e}")
         e.raise_HTTPException()
         
 @router.post("/", response_model=LLMResponse)
@@ -31,7 +29,6 @@ async def llm_api(req: LLMRequest) -> LLMResponse:
     except (ArcFusionException, Exception) as e:
         if type(e) != ArcFusionException:
             e = ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
-        logger.error(f"[LLM API Error]: {e}")
         e.raise_HTTPException()
 
 @router.post("/clear-history")
@@ -42,7 +39,6 @@ async def clear_history_api():
     except (ArcFusionException, Exception) as e:
         if type(e) != ArcFusionException:
             e = ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
-        logger.error(f"[Clear History API Error]: {e}")
         e.raise_HTTPException()
                 
 @router.post("/web-search", response_model=List[Document])
@@ -53,5 +49,4 @@ async def web_search_api(req: WebSearchRequest) -> List[Document]:
     except (ArcFusionException, Exception) as e:
         if type(e) != ArcFusionException:
             e = ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
-        logger.error(f"[Web Search API Error]: {e}")
         e.raise_HTTPException()
