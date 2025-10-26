@@ -102,6 +102,8 @@ class ChatHistoryStore:
             history = self.get_session_history(session_id)
             history.add_message(message)
         except Exception as e:
+            return False
+
     def add_user_message(self, session_id: str, content: str):
         self.add_message(session_id, HumanMessage(content=content))
 

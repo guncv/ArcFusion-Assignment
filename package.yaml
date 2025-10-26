@@ -38,6 +38,8 @@ dependencies:
       - language-tool-python>=2.8.0
       - chromadb
       - psycopg2-binary
+      - asyncpg
+      - sqlalchemy[asyncio]>=2.0
       - rank_bm25
       - langchain-experimental
       - llama-index

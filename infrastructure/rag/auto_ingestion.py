@@ -43,3 +43,5 @@ class AutoIngestionManager:
             return {"status": "success", "chunks": chunks, "files_processed": len(pdf_files)}
         except Exception as e:
             return {"status": "failed", "error": str(e)}
+        
+ingestion_manager = AutoIngestionManager()

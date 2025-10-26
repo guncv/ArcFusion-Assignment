@@ -60,5 +60,14 @@ class WorkflowState(TypedDict, total=False):
     orchestration_history: List[Dict[str, Any]]  # List of iteration attempts with details
 
     # Response fields
-    response: str
+    current_synthesized_response: str  # Response from current iteration only (before merging with old)
+    response: str  # Final merged response (current + old)
     error_message: Optional[str]
+
+    # Evaluation metrics (for monitoring in production)
+    evaluation_metrics: Dict[str, Any]  # Contains all evaluation results
+    faithfulness: str  # "supported" | "partial" | "unsupported" (for RAG)
+    factual_consistency: str  # "consistent" | "partial" | "unsupported" (for WebSearch)
+    retrieval_quality: float  # 0-1 score (average cosine similarity)
+    relevance_score: float  # 0-1 score (for web search relevance)
+    confidence_score: float  # 0-1 combined confidence score

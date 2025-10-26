@@ -15,6 +15,8 @@ services:
       - arc-fusion-network
     depends_on:
       - redis
+      - postgres
+
   redis:
     image: redis:latest
     ports:
@@ -24,9 +26,31 @@ services:
     networks:
       - arc-fusion-network
 
+  postgres:
+    image: postgres:15
+    container_name: arcfusion-postgres
+    environment:
+      POSTGRES_USER: arcfusion
+      POSTGRES_PASSWORD: arcfusion_dev_password
+      POSTGRES_DB: arcfusion
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+    networks:
+      - arc-fusion-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arcfusion"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   redis-volume:
     driver: local
+  postgres-volume:
+    driver: local
+
 networks:
   arc-fusion-network:
     driver: bridge

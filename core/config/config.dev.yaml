@@ -43,20 +43,6 @@ refined_query_agent:
   api_key: ${OPENAI_API_KEY}
   max_tokens: 1000
 
-rag_synthesizer_agent:
-  model: gpt-3.5-turbo
-  api_provider: openai
-  temperature: 0.2
-  api_key: ${OPENAI_API_KEY}
-  max_tokens: 1500
-
-rag_reflection_agent:
-  model: gpt-3.5-turbo
-  api_provider: openai
-  temperature: 0.0
-  api_key: ${OPENAI_API_KEY}
-  max_tokens: 500
-
 planner_agent:
   model: gpt-4o-mini
   api_provider: openai
@@ -78,6 +64,13 @@ orchestration_reflection_agent:
   api_key: ${OPENAI_API_KEY}
   max_tokens: 800
   max_synthesis_attempts: 2
+
+evaluation_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
 
 langsmith:
   enabled: false
@@ -176,8 +169,10 @@ chat_history:
   file:
     persist_dir: "./data/chat_history"
 
-langsmith:
-  enabled: ${LANGCHAIN_TRACING_V2:false}
-  api_key: ${LANGCHAIN_API_KEY:}
-  project_name: ${LANGCHAIN_PROJECT:arcfusion-dev}
-  endpoint: ${LANGCHAIN_ENDPOINT:https://api.smith.langchain.com}
+database:
+  user: "${POSTGRES_USER}"
+  password: "${POSTGRES_PASSWORD}"
+  host: "${POSTGRES_HOST}"
+  port: "${POSTGRES_PORT}"
+  database: "${POSTGRES_DB}"
+  echo: false

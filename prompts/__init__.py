@@ -3,7 +3,11 @@ from .smalltalk_agent_prompt import SMALLTALK_AGENT_PROMPT
 from .more_detail_agent_prompt import MORE_DETAIL_AGENT_PROMPT
 from .refined_agent_prompt import REFINED_QUERY_AGENT_PROMPT
 from .rag_synthesizer_agent_prompt import RAG_SYNTHESIZER_AGENT_PROMPT
-from .orchestration_synthesizer_agent_prompt import ORCHESTRATION_SYNTHESIZER_AGENT_PROMPT
+from .orchestration_synthesizer_agent_prompt import (
+    CURRENT_RAG_SYNTHESIZER_PROMPT,
+    CURRENT_WEB_SYNTHESIZER_PROMPT,
+    MERGED_SYNTHESIZER_PROMPT
+)
 from .rag_reflection_agent_prompt import RAG_REFLECTION_AGENT_PROMPT
 from .reflection_agent_prompt import REFLECTION_AGENT_PROMPT
 from .intent_analysis_agent_prompt import INTENT_ANALYSIS_AGENT_PROMPT
@@ -20,7 +24,9 @@ __all__ = [
     "MORE_DETAIL_AGENT_PROMPT",
     "REFINED_QUERY_AGENT_PROMPT",
     "RAG_SYNTHESIZER_AGENT_PROMPT",
-    "ORCHESTRATION_SYNTHESIZER_AGENT_PROMPT",
+    "CURRENT_RAG_SYNTHESIZER_PROMPT",
+    "CURRENT_WEB_SYNTHESIZER_PROMPT",
+    "MERGED_SYNTHESIZER_PROMPT",
     "RAG_REFLECTION_AGENT_PROMPT",
     "REFLECTION_AGENT_PROMPT",
     "INTENT_ANALYSIS_AGENT_PROMPT",

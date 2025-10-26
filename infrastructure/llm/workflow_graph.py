@@ -22,7 +22,7 @@ class WorkflowGraph:
         self.agents = {
             # Initial routing phase
             LLMType.INIT_ROUTER_AGENT.value: InitRouterAgent(),
-            
+
             # Clarification phase
             LLMType.CLARIFICATION_AGENT.value: ClarificationAgent(),
             LLMType.SMALLTALK_AGENT.value: SmallTalkAgent(),

@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
-from prometheus_fastapi_instrumentator import Instrumentator
 from core.config.config import api_config
 from core.utils.except_handler import validation_exception_handler, response_validation_exception_handler
 from core.utils.exception import ArcFusionException
 from app.router import api_router_v1
-from infrastructure.rag import AutoIngestionManager
+from infrastructure.rag.auto_ingestion import ingestion_manager
+from infrastructure.database.connection import db_connection
+
 app = FastAPI(
     title=api_config.get("API_TITLE", "ArcFusion API"),
     version=api_config.get("API_VERSION", "1.0.0"),
@@ -28,28 +29,19 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(ResponseValidationError, response_validation_exception_handler)
 app.add_exception_handler(ArcFusionException, lambda request, exc: exc.convert_to_JSONResponse())
 
-instrumentator = Instrumentator(
-    should_group_status_codes = False,
-    should_ignore_untemplated = True,
-    should_respect_env_var = True,
-    should_instrument_requests_inprogress = True,
-    excluded_handlers = ["/metrics","/api/docs"],
-    env_var_name = "ENABLE_METRICS",
-    inprogress_name = "inprogress",
-    inprogress_labels = True,
-)
-
-instrumentator.instrument(app).expose(app, include_in_schema=False)
-
-
 @app.on_event("startup")
 async def startup_event():
-    ingestion_result = await AutoIngestionManager().ingest_documents()
+    try:
+        await db_connection.create_tables()
+    except Exception as e:
+        print(f"Failed to create database tables: {e}")
+    
+    ingestion_result = await ingestion_manager.ingest_documents()
 
     if ingestion_result:
         if ingestion_result.get("status") == "success":
-            print("🚀 Auto-ingestion completed successfully!")
+            print("Auto-ingestion completed successfully!")
         else:
-            print("⚠️ Auto-ingestion failed - check logs for details")
+            print("Auto-ingestion failed - check logs for details")
     else:
-        print("ℹ️ Auto-ingestion skipped (not configured or no documents found)")
+        print("Auto-ingestion skipped (not configured or no documents found)")

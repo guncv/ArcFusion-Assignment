@@ -1,17 +1,29 @@
+import asyncio
 from typing import List
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
-from domain.enums.workflow_state import WorkflowState
+from domain.enums.workflow_state import WorkflowState, ToolType
 from domain.enums.llm_type import LLMType
 from infrastructure.llm.loader import loadLLM
-from prompts.orchestration_synthesizer_agent_prompt import ORCHESTRATION_SYNTHESIZER_AGENT_PROMPT
+from prompts.orchestration_synthesizer_agent_prompt import (
+    CURRENT_RAG_SYNTHESIZER_PROMPT,
+    CURRENT_WEB_SYNTHESIZER_PROMPT,
+    MERGED_SYNTHESIZER_PROMPT
+)
 from core.utils.exception import ArcFusionException
 from domain.enums.error_code import ArcFusionErrorCodes
+from infrastructure.evaluation.evaluation_service import EvaluationService
+import logging
+
+logger = logging.getLogger(__name__)
 
 class OrchestrationSynthesizerAgent:
     def __init__(self):
+        self.evaluation_service = EvaluationService()
         self.llm = loadLLM(LLMType.ORCHESTRATION_SYNTHESIZER_AGENT)
-        self.chain = ORCHESTRATION_SYNTHESIZER_AGENT_PROMPT | self.llm | StrOutputParser()
+        self.rag_chain = CURRENT_RAG_SYNTHESIZER_PROMPT | self.llm | StrOutputParser()
+        self.web_chain = CURRENT_WEB_SYNTHESIZER_PROMPT | self.llm | StrOutputParser()
+        self.merged_chain = MERGED_SYNTHESIZER_PROMPT | self.llm | StrOutputParser()
 
     async def invoke(self, state: WorkflowState) -> WorkflowState:
         try:
@@ -20,23 +32,51 @@ class OrchestrationSynthesizerAgent:
             web_results = state.get("web_search_results", [])
             rag_documents = state.get("retrieved_documents_with_scores", [])
             old_response = state.get("response", "")
-            
+            selected_tool = state.get("selected_tool", "")
+
             rag_context = self._format_rag_context(documents)
             web_context = self._format_web_context(web_results)
             rag_docs_context = self._format_rag_documents_context(rag_documents)
 
-            response = await self.chain.ainvoke({
+            # Generate current iteration response based on selected tool
+            if selected_tool == ToolType.RAG_SEARCH.value:
+                current_response = await self.rag_chain.ainvoke({
+                    "user_query": query,
+                    "rag_context": rag_context,
+                    "rag_docs_context": rag_docs_context,
+                })
+            elif selected_tool == ToolType.WEB_SEARCH.value:
+                current_response = await self.web_chain.ainvoke({
+                    "user_query": query,
+                    "web_context": web_context,
+                })
+            else:
+                # Fallback: if no tool selected, return empty current response
+                current_response = ""
+
+            # Generate merged response (old_response + current_response)
+            merged_response = await self.merged_chain.ainvoke({
                 "user_query": query,
-                "rag_context": rag_context,
-                "web_context": web_context,
-                "rag_docs_context": rag_docs_context,
                 "old_response": old_response,
+                "current_response": current_response,
             })
 
-            return {
+            # Prepare updated state
+            updated_state = {
                 **state,
-                "response": response,
+                "current_synthesized_response": current_response,
+                "response": merged_response,
             }
+
+            # Trigger background evaluation (fire-and-forget, non-blocking)
+            try:
+                asyncio.create_task(self.evaluation_service.evaluate_and_save(updated_state))
+                logger.info("Background evaluation triggered successfully")
+            except Exception as eval_error:
+                # Don't fail synthesis if evaluation trigger fails
+                logger.error(f"Failed to trigger evaluation: {eval_error}")
+
+            return updated_state
 
         except Exception as e:
             raise ArcFusionException(

@@ -15,3 +15,4 @@ class LLMType(Enum):
     WEB_SEARCH_AGENT = "web_search_agent"
     ORCHESTRATION_SYNTHESIZER_AGENT = "orchestration_synthesizer_agent"
     ORCHESTRATION_REFLECTION_AGENT = "orchestration_reflection_agent"
+    RESPONSE_EVALUATOR = "response_evaluator"
