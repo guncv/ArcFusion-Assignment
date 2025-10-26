@@ -1,1 +1,0 @@
-session_id_key = "session_id"

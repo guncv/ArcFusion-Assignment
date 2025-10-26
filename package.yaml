@@ -44,4 +44,5 @@ dependencies:
       - langchain-experimental
       - llama-index
       - llama-index-vector-stores-chroma
+      - llama-index-vector-stores-pinecone
       - "unstructured[pdf]"
