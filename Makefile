@@ -1,29 +1,29 @@
-dc = docker compose -f compose.dev.yaml
+dc = docker compose -f docker-compose.yaml
 
-.PHONY: run-dev down-dev build-dev clean-dev logs-dev restart-dev ps-dev migrate-up-dev migrate-down-dev rebuild-dev
+.PHONY: run down build clean logs restart ps migrate-up migrate-down rebuild
 
 info:
 	$(dc) ps
 
-run-dev:
+run:
 	$(dc) up
 
-down-dev:
+down:
 	$(dc) down
 
-build-dev:
+build:
 	$(dc) build
 
-clean-dev:
+clean:
 	$(dc) down --rmi all --volumes --remove-orphans
 
-logs-dev:
+logs:
 	$(dc) logs -f
 
-restart-dev:
+restart:
 	$(dc) restart
 
-ps-dev:
+ps:
 	$(dc) ps
 
-rebuild-dev: clean-dev build-dev run-dev
+rebuild: clean build run

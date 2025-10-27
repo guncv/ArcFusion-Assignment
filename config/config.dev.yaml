@@ -1,0 +1,206 @@
+workflow:
+  orchestration_max_attempts: 2
+
+init_router_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 200
+
+clarification_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+intent_analysis_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 200
+
+smalltalk_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.5
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+needs_more_detail_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.5
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+refined_query_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 1000
+
+planner_agent:
+  model: gpt-4o-mini
+  api_provider: openai
+  temperature: 0.3
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+synthesizer_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.3
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 2500
+
+reflection_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 800
+  max_synthesis_attempts: 2
+
+evaluation_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+evaluation:
+  # Evaluation mode: "production" (fast, no LLM checks) or "full" (thorough, with LLM checks)
+  mode: "production"  # Options: "production", "full"
+
+  # LLM-based evaluation metrics (only in "full" mode)
+  llm_checks:
+    faithfulness: true           # RAG: Check if answer is grounded in context
+    consistency: true             # Web: Check if answer aligns with web results
+    answer_relevance: true        # Both: Check if answer addresses the query
+    context_precision: true       # RAG: Check if retrieved docs are focused
+
+  # Quantitative metrics (always enabled)
+  quantitative:
+    retrieval_quality: true       # RAG: Average document scores
+    relevance_score: true         # Web: Embedding similarity
+
+langsmith:
+  enabled: false
+  api_key: "${LANGCHAIN_API_KEY}"
+  project_name: "ArcFusionGraph"
+  endpoint: "https://eu.api.smith.langchain.com"
+
+tools:
+  enabled: true
+  custom_tools:
+    - say_hello
+    - calculator
+
+search:
+  provider: "tavily"
+  enabled: true
+
+  tavily:
+    api_key: "${TAVILY_API_KEY}"
+    max_results: 3
+    search_depth: "advanced"
+
+web_search:
+  enabled: true
+  provider: "tavily"
+
+  tavily:
+    api_key: "${TAVILY_API_KEY}"
+    max_results: 3
+    search_depth: "advanced"
+
+embedding:
+  provider: "openai"
+
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    model_name: "text-embedding-3-small"
+
+api:
+  title: "ArcFusion API - Dev"
+  version: "1.0.0-dev"
+  prefix: "/api/v1"
+  port: 8000
+
+vector_db:
+  provider: "${VECTOR_DB:chroma}"
+  collection_name: "arcfusion_docs"
+
+  chroma:
+    collection_name: "arcfusion_docs"
+    persist_directory: "${VECTOR_DB_PERSIST_DIR:./.chroma}"
+
+  pinecone:
+    index_name: "${PINECONE_IDX_NAME:arc-fusion-dev}"
+    api_key: "${PINECONE_API_KEY}"
+    environment: "${PINECONE_ENV:us-east-1-aws}"
+    dimensions: "${PINECONE_DIMS:1536}"
+    metric: "${PINECONE_METRIC:cosine}"
+    cloud: "${PINECONE_CLOUD:aws}"
+    region: "${PINECONE_REGION:us-east-1}"
+
+rag:
+  auto_ingestion:
+    enabled: true
+    documents_directory: ["./documents"]
+    clear_existing: false
+    on_startup: true
+
+  ingestion:
+    provider: "unstructured"  # Document reader provider (only "unstructured" supported)
+
+  embedding_model: "text-embedding-3-small"
+  embedding_api_key: "${OPENAI_API_KEY}"
+
+  chunking:
+    provider: "semantic_node"  # Options: "semantic_node" (LlamaIndex SemanticSplitterNodeParser)
+    llamaindex_buffer_size: 1  # Number of sentences to group together
+    llamaindex_breakpoint_threshold: 95  # Percentile threshold for semantic splits
+
+  retrieval:
+    type: "vector"
+    top_k: 5
+
+  confidence_evaluation:
+    min_confidence_threshold: 0.6
+    min_documents_threshold: 2
+    avg_score_threshold: 0.5
+
+  generation:
+    llm_type: "refined_query_agent"
+    max_context_length: 4000
+
+logging:
+  level: "DEBUG"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+chat_history:
+  backend: "postgres"  # Options: "postgres", "redis", "file"
+  ttl: 3600
+
+  redis:
+    host: "${REDIS_HOST:localhost}"
+    port: "${REDIS_PORT:6379}"
+    db: "${REDIS_DB:0}"
+    password: "${REDIS_PASSWORD:}"
+    key_prefix: "chat_history:"
+
+  file:
+    persist_dir: "./data/chat_history"
+
+database:
+  user: "${POSTGRES_USER}"
+  password: "${POSTGRES_PASSWORD}"
+  host: "${POSTGRES_HOST}"
+  port: "${POSTGRES_PORT}"
+  database: "${POSTGRES_DB}"
+  echo: false
