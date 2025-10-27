@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from typing import List
 from langchain_core.output_parsers import JsonOutputParser
 from src.agent.base import RunnableAgent
+from src.infras.log import logger
 
 class SearchQuery(BaseModel):
     query: str = Field(description="The specific search query to execute")
@@ -76,6 +77,13 @@ class PlannerAgent(RunnableAgent):
                 # Fallback to default values
                 selected_tool = ToolType.WEB_SEARCH.value
                 new_queries = []
+
+            session_id = state.get("session_id", "unknown")
+            logger.info(f"[{session_id}] PlannerAgent generated {len(new_queries)} queries for tool={selected_tool}")
+            for i, query_obj in enumerate(new_queries, 1):
+                q = query_obj.get("query", "") if isinstance(query_obj, dict) else str(query_obj)
+                p = query_obj.get("purpose", "N/A") if isinstance(query_obj, dict) else "N/A"
+                logger.info(f"[{session_id}]   Query {i}: '{q}' | Purpose: {p}")
 
             # Track old queries for duplicate prevention
             existing_old_queries = state.get("old_queries", [])

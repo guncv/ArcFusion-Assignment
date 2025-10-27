@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
 from src.agent.base import ReActAgent
+from src.infras.log import logger
 
 class RoutingDecisionInput(BaseModel):
     decision: str = Field(description="The routing decision: 'clear_question' or 'ambiguous'")
@@ -47,29 +48,35 @@ class InitRouterAgent(ReActAgent):
     async def ainvoke(self, state: WorkflowState) -> WorkflowState:
         try:
             user_query = state.get("user_query", "")
-            
+            session_id = state.get("session_id", "unknown")
+
+            logger.info(f"[{session_id}] InitRouter analyzing query: '{user_query[:100]}...'")
+
             # Build messages list
             messages = await self.build_message_list(
                 user_query=user_query,
                 include_history=False,
                 state=state
             )
-            
+
             # Invoke the agent
             response = await self.ainvoke_agent(messages)
             messages = response.get("messages", [])
-            
+
             # Extract decision from tool result
             decision = self.extract_tool_result(
                 messages=messages,
                 tool_name="finalize_routing",
                 valid_values=self.valid_decisions
             )
-            
+
             # Fallback to default if no valid decision found
             if not decision:
+                logger.warning(f"[{session_id}] InitRouter found no valid decision, defaulting to 'ambiguous'")
                 decision = RoutingDecision.AMBIGUOUS.value
-            
+            else:
+                logger.info(f"[{session_id}] InitRouter decision: '{decision}' for query: '{user_query[:80]}...'")
+
             return {
                 **state,
                 "routing_decision": decision,

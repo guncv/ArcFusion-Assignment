@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
 from src.agent.base import ReActAgent
+from src.infras.log import logger
 
 class ClarificationDecisionInput(BaseModel):
     decision: str = Field(description="The routing decision: 'smalltalk', 'needs_more_detail', or 'process_query'")
@@ -52,31 +53,37 @@ class ClarificationAgent(ReActAgent):
     async def ainvoke(self, state: WorkflowState) -> WorkflowState:
         try:
             user_query = state.get("user_query", "")
-            
+            session_id = state.get("session_id", "unknown")
+
+            logger.info(f"[{session_id}] ClarificationAgent processing query: '{user_query[:80]}...'")
+
             # Build messages list with history + current query
             messages = await self.build_message_list(
                 user_query=user_query,
                 include_history=True,
                 state=state
             )
-            
+
             # Invoke the agent
             response = await self.ainvoke_agent(messages)
-            
+
             # Extract the routing decision from tool calls
             messages = response.get("messages", [])
-            
+
             # Extract decision from tool result
             decision = self.extract_tool_result(
                 messages=messages,
                 tool_name="finalize_clarification_routing",
                 valid_values=self.valid_decisions
             )
-            
+
             # Fallback to default if no valid decision found
             if not decision:
+                logger.warning(f"[{session_id}] ClarificationAgent found no valid decision, defaulting to 'needs_more_detail'")
                 decision = RoutingDecision.NEEDS_MORE_DETAIL.value
-            
+            else:
+                logger.info(f"[{session_id}] ClarificationAgent decision: '{decision}'")
+
             return {
                 **state,
                 "routing_decision": decision,

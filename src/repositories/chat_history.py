@@ -30,12 +30,11 @@ class ChatHistoryRepository:
                 session.add(chat_message)
                 await session.commit()
                 await session.refresh(chat_message)
-
-                logger.debug(f"Added message to session {session_id}: {message_type}")
+ 
                 return chat_message
 
         except Exception as e:
-            logger.error(f"Failed to add chat message: {e}")
+            logger.error(f"[{session_id}] Failed to add chat message: {e}")
             return None
 
     async def get_messages(
@@ -59,10 +58,16 @@ class ChatHistoryRepository:
                 result = await session.execute(query)
                 messages = result.scalars().all()
 
+                msg_count = len(messages)
+                if msg_count > 0:
+                    logger.info(f"[{session_id}] Message: {messages}")
+                else:
+                    logger.debug(f"[{session_id}] No chat history found")
+
                 return list(messages)
 
         except Exception as e:
-            logger.error(f"Failed to retrieve chat messages: {e}")
+            logger.error(f"[{session_id}] Failed to retrieve chat messages: {e}")
             return []
 
     async def clear_session(self, session_id: str) -> bool:

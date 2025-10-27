@@ -8,6 +8,7 @@ from src.repositories.chat_history import get_chat_history_repository
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
 from .agent_interface import AgentInterface
+from src.infras.log import logger
 
 class ReActAgent(AgentInterface):
 
@@ -48,10 +49,9 @@ class ReActAgent(AgentInterface):
             )
 
     async def get_chat_history(self, state: WorkflowState):
-        # Helper method to get chat history from state.
-        session_id = state.get("session_id", "")
+        session_id = state.get("session_id", "unknown")
+        logger.debug(f"[{session_id}] {self.name} requesting chat history")
         repo = get_chat_history_repository()
-        # Get messages from repository
         messages = await repo.get_messages(session_id)
         return messages
 
@@ -61,11 +61,13 @@ class ReActAgent(AgentInterface):
         include_history: bool = False,
         state: Optional[WorkflowState] = None
     ) -> List[Dict[str, str]]:
-        # Build message list for agent, optionally including chat history.
         messages = []
 
         if include_history and state:
+            session_id = state.get("session_id", "unknown")
             messages_list = await self.get_chat_history(state)
+            if messages_list:
+                logger.info(f"[{session_id}] {self.name} including {len(messages_list)} chat history messages in context")
             for msg in messages_list:
                 # Handle ChatMessage objects from database
                 if hasattr(msg, 'message_type'):

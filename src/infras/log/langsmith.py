@@ -1,9 +1,6 @@
 from typing import Optional, Dict, Any
 from langsmith import Client
-import logging
-
-# Use basic logger to avoid circular import
-logger = logging.getLogger(__name__)
+from src.infras.log import logger
 
 class LangSmithTracer:
     def __init__(self, config: Dict[str, Any]):

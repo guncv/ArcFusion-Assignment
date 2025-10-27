@@ -12,7 +12,7 @@ class AutoIngestionManager:
         
         self.project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
         
-        docs_dirs = self.config.get("documents_directory", ["./documents"])
+        docs_dirs = self.config.get("documents_directory", ["documents"])
         self.documents_directory = [os.path.join(self.project_root, d.lstrip('./')) if d.startswith('./') else d for d in docs_dirs]
         self.clear_existing = self.config.get("clear_existing", False)
         self.on_startup = self.config.get("on_startup", True)

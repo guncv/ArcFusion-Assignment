@@ -6,6 +6,7 @@ from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
 from src.prompts import REFINED_QUERY_PROMPT
 from src.agent.base import RunnableAgent
+from src.infras.log import logger
 
 class RefinedQueryAgent(RunnableAgent):
     def __init__(self):
@@ -28,16 +29,21 @@ class RefinedQueryAgent(RunnableAgent):
     async def ainvoke(self, state: WorkflowState) -> WorkflowState:
         try:
             user_query = state.get("user_query", "")
+            session_id = state.get("session_id", "unknown")
             chat_messages = await self.get_chat_history(state)
-            
+
+            logger.info(f"[{session_id}] RefinedQueryAgent refining query: '{user_query[:80]}...'")
+
             # Convert ChatMessage objects to LangChain message format
             history = self._convert_chat_messages_to_langchain(chat_messages)
-            
+
             response = await self.ainvoke_chain({
                 "user_query": user_query,
                 "history": history
             })
-            
+
+            logger.info(f"[{session_id}] RefinedQueryAgent result: '{response[:80]}...'")
+
             return {
                 **state,
                 "user_query": response,
