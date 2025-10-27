@@ -3,12 +3,13 @@ import os
 from pythonjsonlogger import jsonlogger
 import coloredlogs
 
-def get_logger(name: str = "arcfusion_logger") -> logging.Logger:
+def get_logger() -> logging.Logger:
     env = os.getenv("ENV", "dev")
     log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 
-    logger = logging.getLogger(name)
+    logger = logging.getLogger("arcfusion")
     logger.setLevel(getattr(logging, log_level, logging.INFO))
+    logger.propagate = False
 
     if not logger.handlers:
         handler = logging.StreamHandler()

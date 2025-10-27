@@ -60,7 +60,10 @@ class ChatHistoryRepository:
 
                 msg_count = len(messages)
                 if msg_count > 0:
-                    logger.info(f"[{session_id}] Message: {messages}")
+                    logger.info(f"[{session_id}] Retrieved {msg_count} chat history messages:")
+                    for msg in messages:
+                        content_preview = msg.content[:100] + "..." if len(msg.content) > 100 else msg.content
+                        logger.info(f"[{session_id}]   [{msg.message_type}] seq={msg.sequence}: '{content_preview}'")
                 else:
                     logger.debug(f"[{session_id}] No chat history found")
 

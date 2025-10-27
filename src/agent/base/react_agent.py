@@ -64,10 +64,8 @@ class ReActAgent(AgentInterface):
         messages = []
 
         if include_history and state:
-            session_id = state.get("session_id", "unknown")
+
             messages_list = await self.get_chat_history(state)
-            if messages_list:
-                logger.info(f"[{session_id}] {self.name} including {len(messages_list)} chat history messages in context")
             for msg in messages_list:
                 # Handle ChatMessage objects from database
                 if hasattr(msg, 'message_type'):
