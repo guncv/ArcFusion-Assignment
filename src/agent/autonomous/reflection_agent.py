@@ -5,13 +5,13 @@ from src.prompts import REFLECTION_PROMPT
 from langchain_core.output_parsers import JsonOutputParser
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
-from src.agent.base import runnable_agent
+from src.agent.base import RunnableAgent
 
 class ReflectionResult(BaseModel):
     is_sufficient: bool = Field(description="Whether the answer is sufficient and complete")
     issues: str = Field(description="A string describing the issues with the answer if it is insufficient and what should be done to improve it for planner to fix it")
 
-class ReflectionAgent(runnable_agent):
+class ReflectionAgent(RunnableAgent):   
     def __init__(self):
         parser = JsonOutputParser(pydantic_object=ReflectionResult)
         super().__init__(
@@ -61,4 +61,5 @@ class ReflectionAgent(runnable_agent):
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
 
-reflection_agent = ReflectionAgent()
+# Note: reflection_agent should be instantiated with proper arguments when needed
+# reflection_agent = ReflectionAgent()

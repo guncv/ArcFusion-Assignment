@@ -1,7 +1,7 @@
 from typing import List, Any
 from llama_index.embeddings.openai import OpenAIEmbedding as LlamaOpenAIEmbedding
 from src.config import config
-from infras.embedding.base import BaseEmbedding
+from src.infras.embedding.base import BaseEmbedding
 from llama_index.core.base.embeddings.base import BaseEmbedding as LlamaBaseEmbedding
 
 class OpenAIEmbeddingProvider(BaseEmbedding):

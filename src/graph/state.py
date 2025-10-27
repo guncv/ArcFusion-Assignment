@@ -25,6 +25,7 @@ class ToolType(Enum):
     # Tool selection for planner
     RAG_SEARCH = "rag_search"  # Search internal documents/knowledge base
     WEB_SEARCH = "web_search"  # Search external web sources
+    NONE = "none"  # No search needed
 
 class RetrievedDocument(TypedDict):
     document: Document

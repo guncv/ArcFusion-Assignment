@@ -29,4 +29,4 @@ RUN micromamba run -n arcfusion-asm java -version && echo "Java verified success
 COPY . .
 COPY gunicorn.conf.py .
 
-CMD ["micromamba", "run", "-n", "arcfusion-asm", "gunicorn", "app.main:app", "--config", "gunicorn.conf.py"]
+CMD ["micromamba", "run", "-n", "arcfusion-asm", "gunicorn", "src.main:app", "--config", "gunicorn.conf.py"]

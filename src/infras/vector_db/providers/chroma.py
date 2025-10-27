@@ -5,8 +5,8 @@ from llama_index.core.schema import TextNode, NodeWithScore
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from langchain_core.documents import Document
 import chromadb
-from infras.vector_db.base import BaseVectorStore
-from infras.embedding.base import BaseEmbedding
+from src.infras.vector_db.base import BaseVectorStore
+from src.infras.embedding.base import BaseEmbedding
 from src.config import config
 
 class ChromaVectorStoreProvider(BaseVectorStore):

@@ -1,4 +1,5 @@
-from infras.rag.chunking.strategies.semantic import SemanticChunker
-from infras.rag.chunking.strategies.fixed_size import FixedSizeChunker
+"""Chunking providers - Different chunking strategies."""
 
-__all__ = ["SemanticChunker", "FixedSizeChunker"]
+from src.infras.chunking.provider.semantic_node import SemanticNodeChunker
+
+__all__ = ["SemanticNodeChunker"]

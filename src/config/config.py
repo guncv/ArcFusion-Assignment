@@ -10,7 +10,7 @@ class ConfigLoader:
     def __init__(self, environment: str = None):
         self.environment = environment or os.getenv('ENV', 'dev')
         self.project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        self.config_path = os.path.join(self.project_root, 'core', 'config', f'config.{self.environment}.yaml')
+        self.config_path = os.path.join(self.project_root, 'config', f'config.{self.environment}.yaml')
         
         if not os.path.isfile(self.config_path):
             raise FileNotFoundError(f"Cannot find config file: {self.config_path}")

@@ -1,15 +1,14 @@
 from functools import lru_cache
 from src.config import config
-from infras.vector_db.base import BaseVectorStore
-from infras.vector_db.providers.chroma import ChromaVectorStoreProvider
-from infras.vector_db.providers.pinecone import PineconeVectorStoreProvider
-from infras.embedding.factory import EmbeddingFactory
+from src.infras.vector_db.base import BaseVectorStore
+from src.infras.vector_db.providers.chroma import ChromaVectorStoreProvider
+from src.infras.vector_db.providers.pinecone import PineconeVectorStoreProvider
+from src.infras.embedding.factory import EmbeddingFactory
 
 class VectorStoreFactory:
 
     _providers = {
         "chroma": ChromaVectorStoreProvider,
-        "pinecone": PineconeVectorStoreProvider,
     }
 
     @classmethod

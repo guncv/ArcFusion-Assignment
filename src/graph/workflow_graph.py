@@ -3,6 +3,11 @@ from src.config import config
 from src.graph.state import WorkflowState, RoutingDecision
 from src.constants import LLMType
 from src.infras.log import langsmith_tracer
+from src.repositories.chat_history import get_chat_history_repository
+import logging
+import traceback
+
+logger = logging.getLogger(__name__)
 from src.agent import (
     SmallTalkAgent,
     MoreDetailAgent,
@@ -19,6 +24,7 @@ class WorkflowGraph:
     def __init__(self):
         self.tracer = langsmith_tracer
         self.orchestration_max_attempts = config.get("orchestration_max_attempts", 2)
+        self.chat_history_repo = get_chat_history_repository()
 
         self.agents = {
             # Initial routing phase
@@ -33,8 +39,8 @@ class WorkflowGraph:
             # Orchestration phase (autonomous tool selection)
             LLMType.PLANNER_AGENT.value: PlannerAgent(),
             LLMType.TOOL_EXECUTOR.value: ToolExecutor(),
-            LLMType.ORCHESTRATION_SYNTHESIZER_AGENT.value: SynthesizerAgent(),
-            LLMType.ORCHESTRATION_REFLECTION_AGENT.value: ReflectionAgent(),
+            LLMType.SYNTHESIZER_AGENT.value: SynthesizerAgent(),
+            LLMType.REFLECTION_AGENT.value: ReflectionAgent(),
         }
 
         self.graph = self._build_graph()
@@ -52,8 +58,8 @@ class WorkflowGraph:
         # Orchestration nodes (autonomous tool selection via Planner)
         workflow.add_node(LLMType.PLANNER_AGENT.value, self._planner_agent)
         workflow.add_node(LLMType.TOOL_EXECUTOR.value, self._tool_executor)
-        workflow.add_node(LLMType.ORCHESTRATION_SYNTHESIZER_AGENT.value, self._orchestration_synthesizer_agent)
-        workflow.add_node(LLMType.ORCHESTRATION_REFLECTION_AGENT.value, self._orchestration_reflection_agent)
+        workflow.add_node(LLMType.SYNTHESIZER_AGENT.value, self._synthesizer_agent)
+        workflow.add_node(LLMType.REFLECTION_AGENT.value, self._reflection_agent)
 
         # Set entry point
         workflow.set_entry_point(LLMType.INIT_ROUTER_AGENT.value)
@@ -87,13 +93,13 @@ class WorkflowGraph:
 
         # Orchestration flow: Planner -> Tool Executor -> Synthesis -> Reflection
         workflow.add_edge(LLMType.PLANNER_AGENT.value, LLMType.TOOL_EXECUTOR.value)
-        workflow.add_edge(LLMType.TOOL_EXECUTOR.value, LLMType.ORCHESTRATION_SYNTHESIZER_AGENT.value)
-        workflow.add_edge(LLMType.ORCHESTRATION_SYNTHESIZER_AGENT.value, LLMType.ORCHESTRATION_REFLECTION_AGENT.value)
+        workflow.add_edge(LLMType.TOOL_EXECUTOR.value, LLMType.SYNTHESIZER_AGENT.value)
+        workflow.add_edge(LLMType.SYNTHESIZER_AGENT.value, LLMType.REFLECTION_AGENT.value)
 
         # Orchestration Reflection decides: end or retry with replanning
         workflow.add_conditional_edges(
-            LLMType.ORCHESTRATION_REFLECTION_AGENT.value,
-            self._route_after_orchestration_reflection,
+            LLMType.REFLECTION_AGENT.value,
+            self._route_after_reflection,
             {
                 END: END,
                 LLMType.PLANNER_AGENT.value: LLMType.PLANNER_AGENT.value,
@@ -124,52 +130,50 @@ class WorkflowGraph:
         else:
             return RoutingDecision.NEEDS_MORE_DETAIL.value
 
-    def _route_after_orchestration_reflection(self, state: WorkflowState) -> str:
+    def _route_after_reflection(self, state: WorkflowState) -> str:
         is_sufficient = state.get("is_answer_sufficient", True)
         if is_sufficient:
             return END
         else:
-            # orchestration_attempts is now incremented in orchestration_reflection_agent
-            # (state mutations in routing functions don't persist in LangGraph)
             current_attempts = state.get("orchestration_attempts", 0)
             if current_attempts >= self.orchestration_max_attempts:
                 return END
             return LLMType.PLANNER_AGENT.value
 
     async def _init_router_agent(self, state: WorkflowState) -> WorkflowState:
-        resp = await self.agents[LLMType.INIT_ROUTER_AGENT.value].invoke(state)
+        resp = await self.agents[LLMType.INIT_ROUTER_AGENT.value].ainvoke(state)
         return resp
 
     async def _clarification_agent(self, state: WorkflowState) -> WorkflowState:
-        resp = await self.agents[LLMType.CLARIFICATION_AGENT.value].invoke(state)
+        resp = await self.agents[LLMType.CLARIFICATION_AGENT.value].ainvoke(state)
         return resp
 
     async def _smalltalk_agent(self, state: WorkflowState) -> WorkflowState:
-        resp = await self.agents[LLMType.SMALLTALK_AGENT.value].invoke(state)
+        resp = await self.agents[LLMType.SMALLTALK_AGENT.value].ainvoke(state)
         return resp
 
     async def _needs_more_detail_agent(self, state: WorkflowState) -> WorkflowState:
-        resp = await self.agents[LLMType.NEEDS_MORE_DETAIL_AGENT.value].invoke(state)
+        resp = await self.agents[LLMType.NEEDS_MORE_DETAIL_AGENT.value].ainvoke(state)
         return resp
 
     async def _refined_query_agent(self, state: WorkflowState) -> WorkflowState:
-        resp = await self.agents[LLMType.REFINED_QUERY_AGENT.value].invoke(state)
+        resp = await self.agents[LLMType.REFINED_QUERY_AGENT.value].ainvoke(state)
         return resp
 
     async def _planner_agent(self, state: WorkflowState) -> WorkflowState:
-        resp = await self.agents[LLMType.PLANNER_AGENT.value].invoke(state)
+        resp = await self.agents[LLMType.PLANNER_AGENT.value].ainvoke(state)
         return resp
 
     async def _tool_executor(self, state: WorkflowState) -> WorkflowState:
-        resp = await self.agents[LLMType.TOOL_EXECUTOR.value].invoke(state)
+        resp = await self.agents[LLMType.TOOL_EXECUTOR.value].ainvoke(state)
         return resp
 
-    async def _orchestration_synthesizer_agent(self, state: WorkflowState) -> WorkflowState:
-        resp = await self.agents[LLMType.ORCHESTRATION_SYNTHESIZER_AGENT.value].invoke(state)
+    async def _synthesizer_agent(self, state: WorkflowState) -> WorkflowState:
+        resp = await self.agents[LLMType.SYNTHESIZER_AGENT.value].ainvoke(state)
         return resp
 
-    async def _orchestration_reflection_agent(self, state: WorkflowState) -> WorkflowState:
-        resp = await self.agents[LLMType.ORCHESTRATION_REFLECTION_AGENT.value].invoke(state)
+    async def _reflection_agent(self, state: WorkflowState) -> WorkflowState:
+        resp = await self.agents[LLMType.REFLECTION_AGENT.value].ainvoke(state)
         return resp
 
     async def ainvoke(self, user_input: str, session_id: str) -> WorkflowState:
@@ -178,8 +182,12 @@ class WorkflowGraph:
             "session_id": session_id,
         }
 
-        chat_history = getChatHistory(session_id)
-        chat_history.add_user_message(user_input)
+        # Save user message to chat history
+        await self.chat_history_repo.add_message(
+            session_id=session_id,
+            message_type="human",
+            content=user_input
+        )
 
         try:
             if self.tracer.enabled and self.tracer.client:
@@ -197,7 +205,12 @@ class WorkflowGraph:
 
             ai_response = result.get("response", "")
             if ai_response:
-                chat_history.add_ai_message(ai_response)
+                # Save AI response to chat history
+                await self.chat_history_repo.add_message(
+                    session_id=session_id,
+                    message_type="ai",
+                    content=ai_response
+                )
 
             return result
 
@@ -206,6 +219,11 @@ class WorkflowGraph:
                 "I apologize, but I encountered an error while processing your request. "
                 "Please try again or rephrase your question."
             )
+
+            # Log the full error details for debugging
+            logger.error(f"Workflow error for session {session_id}: {str(e)}")
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Full traceback:\n{traceback.format_exc()}")
 
             return {
                 **initial_state,

@@ -2,7 +2,7 @@ services:
   arc-fusion-server:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     volumes:
@@ -15,16 +15,6 @@ services:
       - arc-fusion-network
     depends_on:
       - postgres
-      # - redis  # Optional - only needed if using Redis for chat history
-
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-volume:/data
-    networks:
-      - arc-fusion-network
 
   postgres:
     image: postgres:15
@@ -46,8 +36,6 @@ services:
       retries: 5
 
 volumes:
-  redis-volume:
-    driver: local
   postgres-volume:
     driver: local
 

@@ -50,14 +50,14 @@ planner_agent:
   api_key: ${OPENAI_API_KEY}
   max_tokens: 500
 
-orchestration_synthesizer_agent:
+synthesizer_agent:
   model: gpt-3.5-turbo
   api_provider: openai
   temperature: 0.3
   api_key: ${OPENAI_API_KEY}
   max_tokens: 2500
 
-orchestration_reflection_agent:
+reflection_agent:
   model: gpt-3.5-turbo
   api_provider: openai
   temperature: 0.0
@@ -87,6 +87,15 @@ tools:
 search:
   provider: "tavily"
   enabled: true
+
+  tavily:
+    api_key: "${TAVILY_API_KEY}"
+    max_results: 3
+    search_depth: "advanced"
+
+web_search:
+  enabled: true
+  provider: "tavily"
 
   tavily:
     api_key: "${TAVILY_API_KEY}"
@@ -130,19 +139,16 @@ rag:
     clear_existing: false
     on_startup: true
 
+  ingestion:
+    provider: "unstructured"  # Document reader provider (only "unstructured" supported)
+
   embedding_model: "text-embedding-3-small"
   embedding_api_key: "${OPENAI_API_KEY}"
-    
+
   chunking:
-    chunk_size: 300
-    chunk_overlap: 50
-    separators: null
-    strategy: "semantic_llamaindex"
-    semantic_model: "text-embedding-3-small"
-    semantic_similarity_threshold: 0.7
-    semantic_min_chunk_size: null
-    llamaindex_buffer_size: 1
-    llamaindex_breakpoint_threshold: 85
+    provider: "semantic_node"  # Options: "semantic_node" (LlamaIndex SemanticSplitterNodeParser)
+    llamaindex_buffer_size: 1  # Number of sentences to group together
+    llamaindex_breakpoint_threshold: 95  # Percentile threshold for semantic splits
 
   retrieval:
     type: "vector"  # Options: "vector", "bm25", "ensemble"

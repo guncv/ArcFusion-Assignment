@@ -1,8 +1,8 @@
 from typing import Dict, Any
 from functools import lru_cache
 from src.config import config
-from infras.embedding.base import BaseEmbedding
-from infras.embedding.providers.openai import OpenAIEmbeddingProvider
+from src.infras.embedding.base import BaseEmbedding
+from src.infras.embedding.providers.openai import OpenAIEmbeddingProvider
 
 class EmbeddingFactory:
     _providers = {
@@ -37,4 +37,4 @@ class EmbeddingFactory:
             )
 
         provider_class = cls._providers[provider_name]
-        return provider_class(**provider_config)
+        return provider_class()

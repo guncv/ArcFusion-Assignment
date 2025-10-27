@@ -1,17 +1,16 @@
 import asyncio
-import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from src.graph.state import WorkflowState, ToolType
 from src.agent import RAGEvaluator, WebEvaluator
-from src.infras.database import db_connection, EvaluationMetrics
-
-logger = logging.getLogger(__name__)
+from src.repositories.evaluation import get_evaluation_repository
+from src.infras.log import logger
 
 class EvaluationService:
-    
+
     def __init__(self):
         self.rag_evaluator = RAGEvaluator()
         self.web_evaluator = WebEvaluator()
+        self.evaluation_repo = get_evaluation_repository()
 
     async def evaluate_and_save(self, state: WorkflowState) -> None:
         try:
@@ -76,24 +75,31 @@ class EvaluationService:
         metrics: Dict[str, Any]
     ) -> None:
         try:
-            async with db_connection.async_session_factory() as session:
-                evaluation = EvaluationMetrics(
-                    session_id=session_id,
-                    user_query=user_query,
-                    tool_type=tool_type,
-                    faithfulness=metrics.get("faithfulness"),
-                    retrieval_quality=metrics.get("retrieval_quality"),
-                    factual_consistency=metrics.get("factual_consistency"),
-                    relevance_score=metrics.get("relevance_score"),
-                    confidence_score=metrics["confidence_score"],
-                    current_response=current_response,
-                    additional_metadata=metrics.get("metadata", {})
-                )
-
-                session.add(evaluation)
-                await session.commit()
+            await self.evaluation_repo.save_evaluation(
+                session_id=session_id,
+                user_query=user_query,
+                tool_type=tool_type,
+                confidence_score=metrics["confidence_score"],
+                current_response=current_response,
+                faithfulness=metrics.get("faithfulness"),
+                retrieval_quality=metrics.get("retrieval_quality"),
+                factual_consistency=metrics.get("factual_consistency"),
+                relevance_score=metrics.get("relevance_score"),
+                additional_metadata=metrics.get("metadata", {})
+            )
+            logger.info(f"Successfully saved evaluation for session {session_id}")
         except Exception as e:
             logger.error(f"Failed to save evaluation to database: {e}")
             raise
 
-evaluation_service = EvaluationService()
+
+# Singleton instance
+_evaluation_service: Optional[EvaluationService] = None
+
+
+def get_evaluation_service() -> EvaluationService:
+    """Get or create the singleton EvaluationService instance."""
+    global _evaluation_service
+    if _evaluation_service is None:
+        _evaluation_service = EvaluationService()
+    return _evaluation_service

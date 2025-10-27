@@ -3,7 +3,7 @@ from dotenv.main import logger
 from langchain_core.output_parsers import StrOutputParser
 from src.graph import WorkflowState, ToolType
 from src.constants import LLMAgentName, LLMType
-from src.infras.llm import loadLLM
+from src.infras import llm_loader
 from src.prompts import (
     CURRENT_RAG_SYNTHESIZER_PROMPT,
     CURRENT_WEB_SYNTHESIZER_PROMPT,
@@ -11,22 +11,28 @@ from src.prompts import (
 )
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
-from src.infras.evaluation import EvaluationService
-from src.agent.base import agent_interface
+from src.agent.base import AgentInterface
 from src.utils.format import (
     format_rag_context,
     format_web_context,
     format_rag_documents_context
 )
 
-class SynthesizerAgent(agent_interface):
+class SynthesizerAgent(AgentInterface):
     def __init__(self):
-        self.evaluation_service = EvaluationService()
-        self.llm = loadLLM(LLMType.SYNTHESIZER_AGENT)
+        self._evaluation_service = None
+        self.llm = llm_loader.loadLLM(LLMType.SYNTHESIZER_AGENT)
         self.rag_chain = CURRENT_RAG_SYNTHESIZER_PROMPT | self.llm | StrOutputParser()
         self.web_chain = CURRENT_WEB_SYNTHESIZER_PROMPT | self.llm | StrOutputParser()
         self.merged_chain = MERGED_SYNTHESIZER_PROMPT | self.llm | StrOutputParser()
         self._agent_name = LLMAgentName.SYNTHESIZER_AGENT.value
+    
+    @property
+    def evaluation_service(self):
+        if self._evaluation_service is None:
+            from src.services.evaluation_service import get_evaluation_service
+            self._evaluation_service = get_evaluation_service()
+        return self._evaluation_service
 
     @property
     def name(self) -> str:
@@ -90,5 +96,3 @@ class SynthesizerAgent(agent_interface):
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
-            
-synthesizer_agent = SynthesizerAgent()

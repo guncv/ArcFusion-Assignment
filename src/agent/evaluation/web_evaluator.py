@@ -3,22 +3,22 @@ import numpy as np
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import OpenAIEmbeddings
-from domain.enums.llm_type import LLMType
-from infrastructure.llm.loader import loadLLM
-from core.config.config import nested_config as config
+from src.constants.llm_type import LLMType
+from src.infras import llm_loader
+from src.config import config
 from src.prompts import WEB_CONSISTENCY_PROMPT
-import logging
-
-logger = logging.getLogger(__name__)
+from src.infras import logger
 
 class WebEvaluator:
 
     def __init__(self):
-        self.llm = loadLLM(LLMType.ORCHESTRATION_SYNTHESIZER_AGENT)
+        self.llm = llm_loader.loadLLM(LLMType.SYNTHESIZER_AGENT)
         self.consistency_chain = WEB_CONSISTENCY_PROMPT | self.llm | StrOutputParser()
 
-        embedding_model = config.get("vector_db", {}).get("embedding_model", "text-embedding-3-small")
-        embedder_api_key = config.get("vector_db", {}).get("embedder_api_key")
+        embedding_config = config.get("embedding", {})
+        openai_config = embedding_config.get("openai", {})
+        embedding_model = openai_config.get("model_name", "text-embedding-3-small")
+        embedder_api_key = openai_config.get("api_key")
         self.embeddings = OpenAIEmbeddings(
             model=embedding_model,
             openai_api_key=embedder_api_key

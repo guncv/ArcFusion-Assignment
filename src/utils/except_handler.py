@@ -1,8 +1,8 @@
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 
-from domain.enums.error_code import ArcFusionErrorCodes
-from core.utils.exception import ArcFusionException
+from src.constants.error_code import ArcFusionErrorCodes
+from src.utils.exception import ArcFusionException
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     try:

@@ -10,7 +10,7 @@ from src.constants import ArcFusionErrorCodes
 from pydantic import BaseModel, Field
 from typing import List
 from langchain_core.output_parsers import JsonOutputParser
-from src.agent.base import runnable_agent
+from src.agent.base import RunnableAgent
 
 class SearchQuery(BaseModel):
     query: str = Field(description="The specific search query to execute")
@@ -24,7 +24,7 @@ class ExecutionPlan(BaseModel):
         description="List of specific search queries to execute. Generate 1-3 targeted queries to find the missing information. Each query will be executed by a separate worker in parallel."
     )
 
-class PlannerAgent(runnable_agent):
+class PlannerAgent(RunnableAgent):
     def __init__(self):
         parser = JsonOutputParser(pydantic_object=ExecutionPlan)
         super().__init__(
@@ -112,4 +112,5 @@ class PlannerAgent(runnable_agent):
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
 
-planner_agent = PlannerAgent()
+# Note: planner_agent should be instantiated with proper arguments when needed
+# planner_agent = PlannerAgent()

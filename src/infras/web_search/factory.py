@@ -42,3 +42,6 @@ class WebSearchProviderFactory:
         provider_instance = provider_class()
         logger.info(f"[WebSearchProviderFactory] Created provider: {provider_name}")
         return provider_instance
+
+# Create singleton instance
+web_search_factory = WebSearchProviderFactory()

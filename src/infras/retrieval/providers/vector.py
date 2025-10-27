@@ -1,63 +1,22 @@
-from typing import List, Optional
+from typing import List
 from langchain_core.documents import Document as LangChainDocument
 from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.postprocessor import SentenceTransformerRerank
-
-from infras.rag.retrieval.base import BaseRetriever
-from infras.vector_db.base import BaseVectorStore
+from src.config import config
+from src.infras.retrieval.base import BaseRetriever
+from src.infras.vector_db.base import BaseVectorStore
 
 
 class VectorRetriever(BaseRetriever):
-    """
-    Vector-based retrieval with optional reranking.
-    """
-
-    def __init__(
-        self,
-        vector_store: BaseVectorStore,
-        similarity_top_k: int = 5,
-        use_reranker: bool = True,
-        reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
-        reranker_top_n: int = 3
-    ):
-        """
-        Initialize vector retriever.
-
-        Args:
-            vector_store: Vector store instance
-            similarity_top_k: Number of results to retrieve from vector store
-            use_reranker: Whether to use reranking
-            reranker_model: Reranker model name
-            reranker_top_n: Number of results after reranking
-        """
+    def __init__(self, vector_store: BaseVectorStore):
+        vector_retrieval_config = config.get("rag", {}).get("retrieval", {})
         self._vector_store = vector_store
-        self._similarity_top_k = similarity_top_k
-        self._use_reranker = use_reranker
-
-        # Get base retriever from vector store
-        self._base_retriever = vector_store.get_retriever(
-            similarity_top_k=similarity_top_k
-        )
-
-        # Initialize reranker if enabled
-        self._reranker = None
-        if use_reranker:
-            self._reranker = SentenceTransformerRerank(
-                model=reranker_model,
-                top_n=reranker_top_n
-            )
+        self._similarity_top_k = vector_retrieval_config.get("similarity_top_k", 5)
+        self._use_reranker = vector_retrieval_config.get("use_reranker", True)
+        self._reranker_model = vector_retrieval_config.get("reranker_model", "cross-encoder/ms-marco-MiniLM-L-6-v2")
+        self._reranker_top_n = vector_retrieval_config.get("reranker_top_n", 3)
 
     def get_relevant_documents(self, query: str, **kwargs) -> List[LangChainDocument]:
-        """
-        Retrieve relevant documents for a query.
-
-        Args:
-            query: Query string
-            **kwargs: Additional parameters
-
-        Returns:
-            List of Document objects with relevance scores
-        """
         try:
             # Retrieve from vector store
             nodes_with_scores = self._base_retriever.retrieve(query)
@@ -85,15 +44,6 @@ class VectorRetriever(BaseRetriever):
             return []
 
     def _llamaindex_to_langchain(self, nodes: List[NodeWithScore]) -> List[LangChainDocument]:
-        """
-        Convert LlamaIndex nodes to LangChain documents.
-
-        Args:
-            nodes: List of NodeWithScore objects
-
-        Returns:
-            List of LangChain Document objects
-        """
         documents = []
         for node_with_score in nodes:
             node = node_with_score.node
@@ -108,10 +58,4 @@ class VectorRetriever(BaseRetriever):
 
     @property
     def retriever_type(self) -> str:
-        """
-        Get the type of retriever.
-
-        Returns:
-            Retriever type string
-        """
         return "vector" if not self._use_reranker else "vector_with_reranking"

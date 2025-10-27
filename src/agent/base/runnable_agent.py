@@ -4,7 +4,8 @@ from langchain_core.language_models import BaseLLM
 from langchain_core.output_parsers import BaseOutputParser
 from src.graph import WorkflowState
 from src.constants import LLMType
-from src.infras.llm import loadLLM, getChatHistory
+from src.infras import llm_loader
+from src.repositories.chat_history import get_chat_history_repository
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
 from .agent_interface import AgentInterface
@@ -18,8 +19,9 @@ class RunnableAgent(AgentInterface):
         parser: BaseOutputParser,
         agent_name: Optional[str] = None
     ):
+        self.chat_history_repo = get_chat_history_repository()
         self.llm_type = llm_type
-        self.llm = loadLLM(llm_type)
+        self.llm = llm_loader.loadLLM(llm_type)
         self.prompt = prompt
         self.parser = parser
         self._agent_name = agent_name
@@ -44,13 +46,11 @@ class RunnableAgent(AgentInterface):
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
 
-    def get_chat_history(self, state: WorkflowState):
+    async def get_chat_history(self, state: WorkflowState):
         # Helper method to get chat history from state.
-        session_id = state.get("session_id", "")
-        return getChatHistory(session_id)
+        messages = await self.chat_history_repo.get_messages(state.get("session_id", ""))
+        return messages
 
     async def ainvoke_chain(self, inputs: dict) -> Any:
         # Invoke the LCEL chain with the given inputs.
         return await self.chain.ainvoke(inputs)
-
-runnable_agent = RunnableAgent()

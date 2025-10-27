@@ -1,7 +1,7 @@
 from typing import Optional, List
 from pathlib import Path
 from src.config import config
-from src.infras.rag.document_processor import DocumentProcessor
+from src.infras.ingestion.document_processor import DocumentProcessor
 
 class AutoIngestionManager:
 

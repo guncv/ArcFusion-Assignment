@@ -1,8 +1,8 @@
 from typing import List, Dict, Any
 import numpy as np
 from langchain_core.output_parsers import StrOutputParser
-from domain.enums.llm_type import LLMType
-from infrastructure.llm.loader import loadLLM
+from src.constants.llm_type import LLMType
+from src.infras import llm_loader
 from src.prompts import RAG_FAITHFULNESS_PROMPT
 import logging
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class RAGEvaluator:
     def __init__(self):
-        self.llm = loadLLM(LLMType.ORCHESTRATION_SYNTHESIZER_AGENT)
+        self.llm = llm_loader.loadLLM(LLMType.SYNTHESIZER_AGENT)
         self.faithfulness_chain = RAG_FAITHFULNESS_PROMPT | self.llm | StrOutputParser()
 
     async def evaluate(

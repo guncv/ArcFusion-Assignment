@@ -1,6 +1,9 @@
 from typing import Optional, Dict, Any
 from langsmith import Client
-from src.infras.log import logger
+import logging
+
+# Use basic logger to avoid circular import
+logger = logging.getLogger(__name__)
 
 class LangSmithTracer:
     def __init__(self, config: Dict[str, Any]):
@@ -44,4 +47,35 @@ class LangSmithTracer:
             return metadata
         return {"langsmith_project": self.project_name, **metadata}
 
-langsmith_tracer = LangSmithTracer()
+
+# Singleton instance - initialized lazily
+_langsmith_tracer: Optional[LangSmithTracer] = None
+
+
+def get_langsmith_tracer(config: Optional[Dict[str, Any]] = None) -> LangSmithTracer:
+    """
+    Get or create the singleton LangSmithTracer instance.
+
+    Args:
+        config: Configuration dictionary. Required on first call.
+
+    Returns:
+        LangSmithTracer singleton instance
+    """
+    global _langsmith_tracer
+    if _langsmith_tracer is None:
+        if config is None:
+            # Import here to avoid circular dependency
+            from src.config import config as app_config
+            config = app_config
+        _langsmith_tracer = LangSmithTracer(config)
+    return _langsmith_tracer
+
+
+# For backward compatibility - lazy initialization
+class _LangSmithTracerProxy:
+    """Proxy to lazily initialize LangSmithTracer."""
+    def __getattr__(self, name):
+        return getattr(get_langsmith_tracer(), name)
+
+langsmith_tracer = _LangSmithTracerProxy()

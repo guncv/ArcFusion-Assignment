@@ -4,9 +4,9 @@ from langchain_core.output_parsers import StrOutputParser
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
 from src.prompts import SMALLTALK_PROMPT
-from src.agent.base import runnable_agent
+from src.agent.base import RunnableAgent
 
-class SmallTalkAgent(runnable_agent):
+class SmallTalkAgent(RunnableAgent):
     def __init__(self):
         super().__init__(
             llm_type=LLMType.SMALLTALK_AGENT,
@@ -33,4 +33,5 @@ class SmallTalkAgent(runnable_agent):
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
 
-small_talk_agent = SmallTalkAgent()
+# Note: small_talk_agent should be instantiated with proper arguments when needed
+# small_talk_agent = SmallTalkAgent()

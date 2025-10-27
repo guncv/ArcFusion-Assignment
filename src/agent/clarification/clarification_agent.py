@@ -1,11 +1,11 @@
 from src.graph.state import WorkflowState, RoutingDecision
-from prompts import CLARIFICATION_PROMPT
+from src.prompts import CLARIFICATION_PROMPT
 from src.constants import LLMType, LLMAgentName
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
-from src.agent.base import react_agent
+from src.agent.base import ReActAgent
 
 class ClarificationDecisionInput(BaseModel):
     decision: str = Field(description="The routing decision: 'smalltalk', 'needs_more_detail', or 'process_query'")
@@ -35,7 +35,7 @@ def finalize_clarification_routing(decision: str) -> str:
 
     return cleaned_decision
 
-class ClarificationAgent(react_agent):
+class ClarificationAgent(ReActAgent):
     def __init__(self):
         super().__init__(
             llm_type=LLMType.CLARIFICATION_AGENT,
@@ -54,7 +54,7 @@ class ClarificationAgent(react_agent):
             user_query = state.get("user_query", "")
             
             # Build messages list with history + current query
-            messages = self.build_message_list(
+            messages = await self.build_message_list(
                 user_query=user_query,
                 include_history=True,
                 state=state
@@ -88,4 +88,5 @@ class ClarificationAgent(react_agent):
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
 
-clarification_agent = ClarificationAgent()
+# Note: clarification_agent should be instantiated with proper arguments when needed
+# clarification_agent = ClarificationAgent()

@@ -4,9 +4,9 @@ from langchain_core.output_parsers import StrOutputParser
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
 from src.prompts import MORE_DETAIL_PROMPT
-from src.agent.base import runnable_agent
+from src.agent.base import RunnableAgent
 
-class MoreDetailAgent(runnable_agent):
+class MoreDetailAgent(RunnableAgent):
     def __init__(self):
         super().__init__(
             llm_type=LLMType.NEEDS_MORE_DETAIL_AGENT,
@@ -33,4 +33,5 @@ class MoreDetailAgent(runnable_agent):
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
 
-more_detail_agent = MoreDetailAgent()
+# Note: more_detail_agent should be instantiated with proper arguments when needed
+# more_detail_agent = MoreDetailAgent()

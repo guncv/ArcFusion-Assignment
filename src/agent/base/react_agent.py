@@ -4,6 +4,7 @@ from langchain_core.tools import BaseTool
 from src.graph import WorkflowState
 from src.constants import LLMType
 from src.infras import llm_loader
+from src.repositories.chat_history import get_chat_history_repository
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
 from .agent_interface import AgentInterface
@@ -46,10 +47,43 @@ class ReActAgent(AgentInterface):
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
 
-    def get_chat_history(self, state: WorkflowState):
+    async def get_chat_history(self, state: WorkflowState):
         # Helper method to get chat history from state.
         session_id = state.get("session_id", "")
-        return getChatHistory(session_id)
+        repo = get_chat_history_repository()
+        # Get messages from repository
+        messages = await repo.get_messages(session_id)
+        return messages
+
+    async def build_message_list(
+        self,
+        user_query: str,
+        include_history: bool = False,
+        state: Optional[WorkflowState] = None
+    ) -> List[Dict[str, str]]:
+        """Build message list for agent, optionally including chat history."""
+        messages = []
+
+        if include_history and state:
+            messages_list = await self.get_chat_history(state)
+            for msg in messages_list:
+                # Handle ChatMessage objects from database
+                if hasattr(msg, 'message_type'):
+                    if msg.message_type == 'human':
+                        messages.append({"role": "user", "content": msg.content})
+                    elif msg.message_type == 'ai':
+                        messages.append({"role": "assistant", "content": msg.content})
+                # Handle LangChain message objects
+                elif hasattr(msg, 'type'):
+                    if msg.type == 'human':
+                        messages.append({"role": "user", "content": msg.content})
+                    elif msg.type == 'ai':
+                        messages.append({"role": "assistant", "content": msg.content})
+
+        # Add current query
+        messages.append({"role": "user", "content": user_query})
+
+        return messages
 
     async def ainvoke_agent(self, messages: List[Dict[str, str]]) -> Dict[str, Any]:
         # Invoke the ReAct agent with messages.
@@ -103,27 +137,3 @@ class ReActAgent(AgentInterface):
                             return value
 
         return None
-
-    def build_message_list(
-        self,
-        user_query: str,
-        include_history: bool = False,
-        state: Optional[WorkflowState] = None
-    ) -> List[Dict[str, str]]:
-        messages = []
-
-        if include_history and state:
-            chat_history = self.get_chat_history(state)
-            for msg in chat_history.messages:
-                if hasattr(msg, 'type'):
-                    if msg.type == 'human':
-                        messages.append({"role": "user", "content": msg.content})
-                    elif msg.type == 'ai':
-                        messages.append({"role": "assistant", "content": msg.content})
-
-        # Add current query
-        messages.append({"role": "user", "content": user_query})
-
-        return messages
-
-react_agent = ReActAgent()

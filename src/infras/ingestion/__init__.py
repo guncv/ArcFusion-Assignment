@@ -1,9 +1,16 @@
-from .document_processor import DocumentProcessor
-from .auto_ingestion import AutoIngestionManager
+"""Ingestion module - Document reading and processing."""
+
+from src.infras.ingestion.base import BaseReader
+from src.infras.ingestion.factory import ReaderFactory
+from src.infras.ingestion.document_processor import DocumentProcessor
+from src.infras.ingestion.auto_ingestion import AutoIngestionManager, ingestion_manager
+from src.infras.ingestion.providers.unstructured import UnstructuredReaderProvider
 
 __all__ = [
+    "BaseReader",
+    "ReaderFactory",
     "DocumentProcessor",
     "AutoIngestionManager",
-    "get_document_processor",
-    "get_auto_ingestion_manager",
+    "ingestion_manager",
+    "UnstructuredReaderProvider",
 ]

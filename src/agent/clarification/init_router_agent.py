@@ -5,7 +5,7 @@ from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
-from src.agent.base import react_agent
+from src.agent.base import ReActAgent
 
 class RoutingDecisionInput(BaseModel):
     decision: str = Field(description="The routing decision: 'clear_question' or 'ambiguous'")
@@ -31,7 +31,7 @@ def finalize_routing(decision: str) -> str:
     
     return cleaned_decision
 
-class InitRouterAgent(react_agent):
+class InitRouterAgent(ReActAgent):
     def __init__(self):
         super().__init__(
             llm_type=LLMType.INIT_ROUTER_AGENT,
@@ -49,7 +49,7 @@ class InitRouterAgent(react_agent):
             user_query = state.get("user_query", "")
             
             # Build messages list
-            messages = self.build_message_list(
+            messages = await self.build_message_list(
                 user_query=user_query,
                 include_history=False,
                 state=state
@@ -80,5 +80,3 @@ class InitRouterAgent(react_agent):
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
-            
-init_router_agent = InitRouterAgent()

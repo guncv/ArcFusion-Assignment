@@ -1,13 +1,14 @@
 from typing import List
 from langchain_core.documents import Document
-from src.graph import WorkflowState, RetrievedDocument
+from src.graph.state import RetrievedDocument
+from src.graph import WorkflowState
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
-from src.infras.rag.retrieval.factory import RetrieverFactory
-from src.agent.base import agent_interface
+from src.infras.retrieval.factory import RetrieverFactory
+from src.agent.base import AgentInterface
 import asyncio
 
-class RAGRetrievalAgent(agent_interface):
+class RAGRetrievalAgent(AgentInterface):
     def __init__(self):
         self.retriever = RetrieverFactory.get()
 
@@ -67,4 +68,5 @@ class RAGRetrievalAgent(agent_interface):
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
 
-rag_retrieval_agent = RAGRetrievalAgent()
+# Note: rag_retrieval_agent should be instantiated with proper arguments when needed
+# rag_retrieval_agent = RAGRetrievalAgent()

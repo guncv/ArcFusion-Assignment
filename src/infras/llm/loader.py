@@ -7,12 +7,13 @@ class LlmLoader:
         self.temperature = None
         self.api_key = None
 
-    def loadLLM(self, type: str):
-        self.model = config[type]["model"]
-        self.provider = config[type]["api_provider"]
-        self.temperature = config[type]["temperature"]
-        self.api_key = config[type]["api_key"]
-        self.max_tokens = config[type]["max_tokens"]
+    def loadLLM(self, type):
+        type_key = type.value if hasattr(type, 'value') else type
+        self.model = config[type_key]["model"]
+        self.provider = config[type_key]["api_provider"]
+        self.temperature = config[type_key]["temperature"]
+        self.api_key = config[type_key]["api_key"]
+        self.max_tokens = config[type_key]["max_tokens"]
         
         if self.provider == "openai":
             from langchain_openai import ChatOpenAI

@@ -25,6 +25,6 @@ MORE_DETAIL_PROMPT = ChatPromptTemplate.from_messages([
     - Keep questions concise and focused
     - Avoid asking multiple unrelated questions
 
-    Ask clarifying questions to better understand what they really want help with.""")
-        ("human", "{input}")
+    Ask clarifying questions to better understand what they really want help with."""),
+    ("human", "{input}")
 ])

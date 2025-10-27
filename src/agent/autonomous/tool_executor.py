@@ -2,12 +2,12 @@ from src.graph import WorkflowState, ToolType
 from src.constants import LLMAgentName
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
-from src.agent.base import agent_interface
+from src.agent.base import AgentInterface
 import asyncio
 from src.agent.autonomous.web_search_agent import WebSearchAgent
 from src.agent.autonomous.rag_retrieval_agent import RAGRetrievalAgent
 
-class ToolExecutor(agent_interface):
+class ToolExecutor(AgentInterface):
     def __init__(self):
         self.web_search_agent = WebSearchAgent()
         self.rag_retrieval_agent = RAGRetrievalAgent()
@@ -46,7 +46,7 @@ class ToolExecutor(agent_interface):
                 if selected_tool == ToolType.RAG_SEARCH.value:
                     task = self.rag_retrieval_agent.search(query_text, query_purpose)
                 else:  # web_search (default)
-                    task = self.web_search_agent.search(query_text, query_purpose)
+                    task = self.web_search_agent.ainvoke(query_text, query_purpose)
 
                 worker_tasks.append(task)
 
@@ -87,4 +87,5 @@ class ToolExecutor(agent_interface):
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
 
-tool_executor = ToolExecutor()
+# Note: tool_executor should be instantiated with proper arguments when needed
+# tool_executor = ToolExecutor()

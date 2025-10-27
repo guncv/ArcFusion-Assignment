@@ -7,11 +7,6 @@ import uuid
 Base = declarative_base()
 
 class ChatMessage(Base):
-    """
-    SQLAlchemy model for storing chat messages in PostgreSQL.
-
-    Stores conversation history for multi-turn chat sessions.
-    """
     __tablename__ = "chat_messages"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

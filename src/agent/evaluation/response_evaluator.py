@@ -3,16 +3,16 @@ import numpy as np
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import OpenAIEmbeddings
-from domain.enums.workflow_state import WorkflowState, ToolType
-from domain.enums.llm_type import LLMType
-from infrastructure.llm.loader import loadLLM
-from core.config.config import nested_config as config
+from src.graph.state import WorkflowState, ToolType
+from src.constants.llm_type import LLMType
+from src.infras import llm_loader
+from src.config import config
 from src.prompts import (
     RAG_FAITHFULNESS_PROMPT,
     WEB_CONSISTENCY_PROMPT
 )
-from core.utils.exception import ArcFusionException
-from domain.enums.error_code import ArcFusionErrorCodes
+from src.utils.exception import ArcFusionException
+from src.constants.error_code import ArcFusionErrorCodes
 
 class ResponseEvaluator:
     """
@@ -21,11 +21,13 @@ class ResponseEvaluator:
     """
 
     def __init__(self):
-        self.llm = loadLLM(LLMType.ORCHESTRATION_SYNTHESIZER_AGENT)  # Use same LLM for evaluation
+        self.llm = llm_loader.loadLLM(LLMType.SYNTHESIZER_AGENT)  # Use same LLM for evaluation
 
         # Initialize embeddings for relevance calculations
-        embedding_model = config.get("vector_db", {}).get("embedding_model", "text-embedding-3-small")
-        embedder_api_key = config.get("vector_db", {}).get("embedder_api_key")
+        embedding_config = config.get("embedding", {})
+        openai_config = embedding_config.get("openai", {})
+        embedding_model = openai_config.get("model_name", "text-embedding-3-small")
+        embedder_api_key = openai_config.get("api_key")
         self.embeddings = OpenAIEmbeddings(
             model=embedding_model,
             openai_api_key=embedder_api_key

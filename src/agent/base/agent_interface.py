@@ -15,5 +15,3 @@ class AgentInterface(ABC):
     def name(self) -> str:
         # Get the agent's name.
         return self.__class__.__name__
-
-agent_interface = AgentInterface()

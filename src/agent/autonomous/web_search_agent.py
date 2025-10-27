@@ -6,9 +6,9 @@ from src.infras.web_search.factory import web_search_factory
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
 import asyncio
-from src.agent.base import agent_interface
+from src.agent.base import AgentInterface
 
-class WebSearchAgent(agent_interface):
+class WebSearchAgent(AgentInterface):
     def __init__(self):
         self.web_search = web_search_factory.get_provider()
         self._agent_name = LLMAgentName.WEB_SEARCH_AGENT.value

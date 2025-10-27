@@ -11,8 +11,11 @@ from src.config import config
 class VectorDBManager:
     def __init__(self):
         self.collection_name = config["vector_db"]["collection_name"]
-        self.embedding_model = config["vector_db"]["embedding_model"]
-        self.embedder_api_key = config["vector_db"]["embedder_api_key"]
+        # Get embedding model from embedding config instead of vector_db
+        embedding_config = config.get("embedding", {})
+        openai_config = embedding_config.get("openai", {})
+        self.embedding_model = openai_config.get("model_name", "text-embedding-3-small")
+        self.embedder_api_key = openai_config.get("api_key", config.get("openai", {}).get("api_key", ""))
         self.persist_directory = config["vector_db"]["chroma"]["persist_directory"]
 
         Path(self.persist_directory).mkdir(parents=True, exist_ok=True)
