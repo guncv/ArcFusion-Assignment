@@ -9,6 +9,7 @@ from src.repositories.chat_history import get_chat_history_repository
 from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
 from .agent_interface import AgentInterface
+from src.infras.log import logger
 
 class RunnableAgent(AgentInterface):
 
@@ -47,8 +48,9 @@ class RunnableAgent(AgentInterface):
             )
 
     async def get_chat_history(self, state: WorkflowState):
-        # Helper method to get chat history from state.
-        messages = await self.chat_history_repo.get_messages(state.get("session_id", ""))
+        session_id = state.get("session_id", "unknown")
+        logger.debug(f"[{session_id}] {self.name} requesting chat history")
+        messages = await self.chat_history_repo.get_messages(session_id)
         return messages
 
     async def ainvoke_chain(self, inputs: dict) -> Any:

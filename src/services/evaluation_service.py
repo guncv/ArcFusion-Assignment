@@ -20,11 +20,18 @@ class EvaluationService:
             session_id = state.get("session_id", "unknown")
             user_query = state.get("user_query", "")
 
+            logger.info(f"[{session_id}] Starting background evaluation (tool={selected_tool})")
+
             if not current_response:
-                logger.warning("No current_response to evaluate, skipping")
+                logger.warning(f"[{session_id}] No current_response to evaluate, skipping")
                 return
 
+            logger.debug(f"[{session_id}] Invoking EvaluationAgent")
             metrics = await self.evaluator.ainvoke(state)
+
+            mode = metrics.get("evaluation_metrics", {}).get("mode", "unknown")
+            confidence = metrics.get("confidence_score", 0.0)
+            logger.info(f"[{session_id}] Evaluation completed: mode={mode}, confidence={confidence:.3f}")
 
             await self._save_to_database(
                 session_id=session_id,
@@ -35,7 +42,7 @@ class EvaluationService:
             )
 
         except Exception as e:
-            logger.error(f"Background evaluation failed: {e}", exc_info=True)
+            logger.error(f"[{session_id}] Background evaluation failed: {e}", exc_info=True)
             
     async def _save_to_database(
         self,
@@ -46,6 +53,7 @@ class EvaluationService:
         metrics: Dict[str, Any]
     ) -> None:
         try:
+            logger.debug(f"[{session_id}] Saving evaluation to database")
             await self.evaluation_repo.save_evaluation(
                 session_id=session_id,
                 user_query=user_query,
@@ -58,9 +66,9 @@ class EvaluationService:
                 relevance_score=metrics.get("relevance_score"),
                 additional_metadata=metrics.get("metadata", {})
             )
-            logger.info(f"Successfully saved evaluation for session {session_id}")
+            logger.info(f"[{session_id}] Evaluation saved to database successfully")
         except Exception as e:
-            logger.error(f"Failed to save evaluation to database: {e}")
+            logger.error(f"[{session_id}] Failed to save evaluation to database: {e}", exc_info=True)
             raise
 
 _evaluation_service: Optional[EvaluationService] = None

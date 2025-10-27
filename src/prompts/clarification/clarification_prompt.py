@@ -29,75 +29,32 @@ CLARIFICATION_PROMPT = """
     ## Classification Criteria
 
     ### "smalltalk" - Route to small talk agent
-    - Casual greetings (hi, hello, hey, good morning, etc.)
-    - Acknowledgments (thanks, thank you, okay, ok, got it, cool, nice, etc.)
-    - Social pleasantries (how are you, goodbye, see you later, etc.)
-    - Simple reactions or confirmations without questions
-    - Expressions without specific information requests
+    Casual conversation without information needs: greetings, acknowledgments, social pleasantries, reactions without questions.
 
     ### "needs_more_detail" - Ask clarifying questions
-    - Vague or ambiguous queries that could mean multiple things
-    - Incomplete queries missing key details (e.g., "tell me about it" with no context)
-    - Overly broad questions (e.g., "explain everything")
-    - Queries where intent is unclear
-    - Questions that need more specificity to answer properly
-    - Pronoun references without clear antecedent in history
-    - Questions about entities without specifying what information is needed (e.g., "tell me about Sam" - about what? age? job? location?)
+    **Core principle**: Query lacks sufficient context to understand what the user wants.
+    - Relative references without context ("more", "it", "that", "this", "those") when chat history is empty or insufficient
+    - Ambiguous subjects without specification
+    - Overly broad or vague requests
+
+    **Key rule**: If query depends on prior context but history is empty/unclear → needs_more_detail
 
     ### "process_query" - Process the query normally
-    - Clear, specific questions or requests
-    - Queries with sufficient context to understand intent
-    - Follow-up questions that reference history clearly (e.g., "tell me more about machine learning" after discussing ML)
-    - Complete queries that can be answered or executed
-    - Search requests with clear keywords
-    - Any query with explicit intent that can be processed
+    Query has sufficient context to understand intent, either from:
+    - Clear, self-contained question/request
+    - Sufficient chat history to resolve references
 
-    ## Decision Priority (apply in this order)
-    1. **First check**: Is it small talk? → smalltalk
-    2. **Second check**: Is it too vague/ambiguous? → needs_more_detail
-    3. **Default**: If clear and actionable → process_query
+    ## Decision Priority
+    1. Is it small talk? → smalltalk
+    2. Does it lack necessary context? → needs_more_detail
+    3. Otherwise → process_query
 
-    ## Examples (do not echo verbatim)
+    ## Examples
 
-    User: "Hi there"
-    Chat History: []
-        Action: call finalize_clarification_routing with {{"decision": "smalltalk"}}
+    User: "Hi there" | History: [] → {{"decision": "smalltalk"}}
+    User: "Tell me more" | History: [] → {{"decision": "needs_more_detail"}}
+    User: "Tell me more" | History: [previous ML discussion] → {{"decision": "process_query"}}
+    User: "What is machine learning?" | History: [] → {{"decision": "process_query"}}
 
-    User: "Thanks!"
-    Chat History: [User: "Explain neural networks", AI: "Neural networks are..."]
-        Action: call finalize_clarification_routing with {{"decision": "smalltalk"}}
-
-    User: "Tell me about it"
-    Chat History: []
-        Action: call finalize_clarification_routing with {{"decision": "needs_more_detail"}}
-
-    User: "What about Java?"
-    Chat History: []
-        Action: call finalize_clarification_routing with {{"decision": "needs_more_detail"}}
-
-    User: "I would like to know about Sam"
-    Chat History: []
-        Action: call finalize_clarification_routing with {{"decision": "needs_more_detail"}}
-
-    User: "What is machine learning?"
-    Chat History: []
-        Action: call finalize_clarification_routing with {{"decision": "process_query"}}
-
-    User: "Tell me more about machine learning"
-    Chat History: [User: "What is AI?", AI: "AI is..."]
-        Action: call finalize_clarification_routing with {{"decision": "process_query"}}
-
-    User: "What about neural networks?"
-    Chat History: [User: "Explain machine learning", AI: "Machine learning is..."]
-        Action: call finalize_clarification_routing with {{"decision": "process_query"}}
-
-    User: "Search for Python documentation"
-    Chat History: []
-        Action: call finalize_clarification_routing with {{"decision": "process_query"}}
-
-    User: "stuff"
-    Chat History: []
-        Action: call finalize_clarification_routing with {{"decision": "needs_more_detail"}}
-
-    Now wait for the user query and optional chat history, then call "finalize_clarification_routing" with the appropriate JSON argument.
+    Now wait for the user query and chat history, then call "finalize_clarification_routing" with the appropriate JSON argument.
 """

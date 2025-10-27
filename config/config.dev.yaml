@@ -151,7 +151,7 @@ vector_db:
 rag:
   auto_ingestion:
     enabled: true
-    documents_directory: ["./documents"]
+    documents_directory: ["documents"]
     clear_existing: false
     on_startup: true
 
