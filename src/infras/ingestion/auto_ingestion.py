@@ -1,5 +1,6 @@
 from typing import Optional, List
 from pathlib import Path
+import os
 from src.config import config
 from src.infras.ingestion.document_processor import DocumentProcessor
 
@@ -8,7 +9,11 @@ class AutoIngestionManager:
     def __init__(self):
         self.config = config["rag"]["auto_ingestion"]
         self.enabled = self.config.get("enabled", False)
-        self.documents_directory = self.config.get("documents_directory", ["./documents"])
+        
+        self.project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+        
+        docs_dirs = self.config.get("documents_directory", ["./documents"])
+        self.documents_directory = [os.path.join(self.project_root, d.lstrip('./')) if d.startswith('./') else d for d in docs_dirs]
         self.clear_existing = self.config.get("clear_existing", False)
         self.on_startup = self.config.get("on_startup", True)
         self.document_processor = DocumentProcessor()
