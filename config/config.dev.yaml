@@ -72,6 +72,22 @@ evaluation_agent:
   api_key: ${OPENAI_API_KEY}
   max_tokens: 500
 
+evaluation:
+  # Evaluation mode: "production" (fast, no LLM checks) or "full" (thorough, with LLM checks)
+  mode: "production"  # Options: "production", "full"
+
+  # LLM-based evaluation metrics (only in "full" mode)
+  llm_checks:
+    faithfulness: true           # RAG: Check if answer is grounded in context
+    consistency: true             # Web: Check if answer aligns with web results
+    answer_relevance: true        # Both: Check if answer addresses the query
+    context_precision: true       # RAG: Check if retrieved docs are focused
+
+  # Quantitative metrics (always enabled)
+  quantitative:
+    retrieval_quality: true       # RAG: Average document scores
+    relevance_score: true         # Web: Embedding similarity
+
 langsmith:
   enabled: false
   api_key: "${LANGCHAIN_API_KEY}"
@@ -151,14 +167,8 @@ rag:
     llamaindex_breakpoint_threshold: 95  # Percentile threshold for semantic splits
 
   retrieval:
-    type: "vector"  # Options: "vector", "bm25", "ensemble"
+    type: "vector"
     top_k: 5
-    vector_weight: 0.7
-    bm25_weight: 0.3
-    use_ensemble: true
-    use_reranker: true
-    reranker_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
-    reranker_top_n: 5
 
   confidence_evaluation:
     min_confidence_threshold: 0.6

@@ -1,11 +1,12 @@
-from .state import WorkflowState, RoutingDecision,ToolType
-from .workflow_graph import workflow_graph
-
+from .state import WorkflowState, RoutingDecision, ToolType
 
 __all__ = [
     "WorkflowState",
     "RoutingDecision",
     "ToolType",
-    "workflow_graph",
 ]
+
+def get_workflow_graph():
+    from .workflow_graph import workflow_graph
+    return workflow_graph
 

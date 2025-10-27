@@ -1,3 +1,16 @@
+import logging
+
+# Silence noisy third-party HTTP logs
+logging.getLogger("openai").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("pikepdf").setLevel(logging.ERROR)
+logging.getLogger("unstructured").setLevel(logging.ERROR)
+logging.getLogger("chromadb").setLevel(logging.ERROR)
+logging.getLogger("chromadb.telemetry").setLevel(logging.ERROR)
+logging.getLogger("langsmith").setLevel(logging.ERROR)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
@@ -33,16 +46,15 @@ app.add_exception_handler(ArcFusionException, lambda request, exc: exc.convert_t
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database and run auto-ingestion on startup."""
     # Initialize database connection
     postgres_database.initialize()
 
     # Create tables
     try:
         await postgres_database.create_tables()
-        print("✅ Database tables created successfully")
+        print("Database tables created successfully")
     except Exception as e:
-        print(f"❌ Failed to create database tables: {e}")
+        print(f"Failed to create database tables: {e}")
 
     # Run auto-ingestion if enabled
     if ingestion_manager.enabled and ingestion_manager.on_startup:
@@ -51,11 +63,11 @@ async def startup_event():
         if ingestion_result:
             if ingestion_result.get("status") == "success":
                 files_processed = ingestion_result.get("files_processed", 0)
-                print(f"✅ Auto-ingestion completed: {files_processed} files processed")
+                print(f"Auto-ingestion completed: {files_processed} files processed")
             else:
                 error = ingestion_result.get("error", "Unknown error")
-                print(f"❌ Auto-ingestion failed: {error}")
+                print(f"Auto-ingestion failed: {error}")
         else:
-            print("⚠️  Auto-ingestion returned no result")
+            print("Auto-ingestion returned no result")
     else:
-        print("ℹ️  Auto-ingestion disabled or not configured")
+        print("Auto-ingestion disabled or not configured")

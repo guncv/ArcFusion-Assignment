@@ -65,8 +65,6 @@ class WorkflowState(TypedDict, total=False):
     error_message: Optional[str]
 
     # Evaluation metrics (for monitoring in production)
-    evaluation_metrics: Dict[str, Any]  # Contains all evaluation results
-    faithfulness: str  # "supported" | "partial" | "unsupported" (for RAG)
     factual_consistency: str  # "consistent" | "partial" | "unsupported" (for WebSearch)
     retrieval_quality: float  # 0-1 score (average cosine similarity)
     relevance_score: float  # 0-1 score (for web search relevance)

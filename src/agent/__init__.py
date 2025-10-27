@@ -8,11 +8,11 @@ __all__ = [
     "SmallTalkAgent",
     "MoreDetailAgent",
     "RefinedQueryAgent",
+    "PlannerAgent",
     "RAGRetrievalAgent",
     "WebSearchAgent",
-    "SynthesizerAgent",
-    "ReflectionAgent",
     "ToolExecutor",
     "SynthesizerAgent",
     "ReflectionAgent",
+    "EvaluationAgent",
 ]

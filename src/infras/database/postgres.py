@@ -30,10 +30,8 @@ class PostgresDatabase:
                 expire_on_commit=False
             )
 
-            logger.info(f"✅ Database engine initialized for {database}@{host}:{port}")
-
         except Exception as e:
-            logger.error(f"❌ Failed to initialize database: {e}")
+            logger.error(f"Failed to initialize database: {e}")
             raise
 
     async def create_tables(self):
@@ -45,10 +43,8 @@ class PostgresDatabase:
                 await conn.run_sync(ChatMessage.metadata.create_all)
                 await conn.run_sync(EvaluationMetrics.metadata.create_all)
 
-            logger.info("✅ Database tables created successfully.")
-
         except Exception as e:
-            logger.error(f"❌ Failed to create tables: {e}")
+            logger.error(f"Failed to create tables: {e}")
             raise
 
     async def get_session(self):
@@ -61,7 +57,7 @@ class PostgresDatabase:
     async def close(self):
         if self.engine:
             await self.engine.dispose()
-            logger.info("🔒 Database connection closed.")
+            logger.info("Database connection closed.")
             self.engine = None
             self.async_session_factory = None
 

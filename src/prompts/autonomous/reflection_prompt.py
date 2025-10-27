@@ -16,14 +16,14 @@ REFLECTION_PROMPT = ChatPromptTemplate.from_messages([
 
   **Therefore, your feedback MUST be ACTIONABLE and CONSTRUCTIVE:**
 
-  ✅ **MUST DO - Feedback (what to ADD):**
+  **MUST DO - Feedback (what to ADD):**
   - "Add biographical details about the person (education, background)"
   - "Include information about how they made their fortune (business ventures)"
   - "Add comparison with other top-ranked individuals"
   - "Expand on recent changes in net worth or ranking"
   - "Include specific examples or notable achievements"
 
-  ❌ **NEVER DO - Feedback (complaints that don't help):**
+  **NEVER DO - Feedback (complaints that don't help):**
   - "Information is not real-time" - web search IS real-time, this doesn't help
   - "Answer is incomplete" - TOO VAGUE, be specific about what's missing
   - "Lacks context" - TOO VAGUE, specify what context to add
@@ -69,10 +69,10 @@ REFLECTION_PROMPT = ChatPromptTemplate.from_messages([
   - "Add information about how their wealth changed in the past year. Include specific events that caused major changes in net worth."
 
   **NEVER USE - Examples of vague issues (too vague or complaining):**
-  - "Information is incomplete" ❌ (what's missing specifically?)
-  - "Lacks detail" ❌ (what details to add?)
-  - "Not current enough" ❌ (web search IS current)
-  - "Needs more context" ❌ (what context specifically?)
+  - "Information is incomplete" (what's missing specifically?)
+  - "Lacks detail" (what details to add?)
+  - "Not current enough" (web search IS current)
+  - "Needs more context" (what context specifically?)
 
   ## Examples
 

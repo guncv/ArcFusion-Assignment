@@ -1,9 +1,5 @@
-from .rag_evaluator import RAGEvaluator
-from .web_evaluator import WebEvaluator
-from .response_evaluator import ResponseEvaluator
+from .evaluation_agent import EvaluationAgent
 
 __all__ = [
-    "RAGEvaluator",
-    "WebEvaluator",
-    "ResponseEvaluator",
+    "EvaluationAgent",
 ]

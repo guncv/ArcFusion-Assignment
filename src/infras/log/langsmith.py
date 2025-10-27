@@ -17,7 +17,6 @@ class LangSmithTracer:
 
     def _initialize(self):
         if not self.enabled:
-            logger.info("[LangSmithTracer] Disabled via config.")
             return
 
         if not self.api_key or len(self.api_key) < 10:
@@ -27,7 +26,6 @@ class LangSmithTracer:
 
         try:
             self.client = Client(api_key=self.api_key, api_url=self.endpoint)
-            logger.info(f"[LangSmithTracer] Connected to {self.endpoint} ({self.project_name})")
         except Exception as e:
             self.enabled = False
             self.client = None
@@ -47,34 +45,19 @@ class LangSmithTracer:
             return metadata
         return {"langsmith_project": self.project_name, **metadata}
 
-
-# Singleton instance - initialized lazily
 _langsmith_tracer: Optional[LangSmithTracer] = None
 
-
 def get_langsmith_tracer(config: Optional[Dict[str, Any]] = None) -> LangSmithTracer:
-    """
-    Get or create the singleton LangSmithTracer instance.
-
-    Args:
-        config: Configuration dictionary. Required on first call.
-
-    Returns:
-        LangSmithTracer singleton instance
-    """
     global _langsmith_tracer
     if _langsmith_tracer is None:
         if config is None:
-            # Import here to avoid circular dependency
             from src.config import config as app_config
             config = app_config
         _langsmith_tracer = LangSmithTracer(config)
     return _langsmith_tracer
 
 
-# For backward compatibility - lazy initialization
 class _LangSmithTracerProxy:
-    """Proxy to lazily initialize LangSmithTracer."""
     def __getattr__(self, name):
         return getattr(get_langsmith_tracer(), name)
 

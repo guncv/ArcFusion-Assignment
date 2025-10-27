@@ -1,46 +1,37 @@
+from functools import lru_cache
 from src.config import config
 
 class LlmLoader:
-    def __init__(self):
-        self.model = None
-        self.provider = None
-        self.temperature = None
-        self.api_key = None
-
+    @lru_cache(maxsize=32)
     def loadLLM(self, type):
         type_key = type.value if hasattr(type, 'value') else type
-        self.model = config[type_key]["model"]
-        self.provider = config[type_key]["api_provider"]
-        self.temperature = config[type_key]["temperature"]
-        self.api_key = config[type_key]["api_key"]
-        self.max_tokens = config[type_key]["max_tokens"]
-        
-        if self.provider == "openai":
+        llm_config = config[type_key]
+
+        if llm_config["api_provider"] == "openai":
             from langchain_openai import ChatOpenAI
             return ChatOpenAI(
-                openai_api_key=self.api_key,
-                model=self.model,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
+                openai_api_key=llm_config["api_key"],
+                model=llm_config["model"],
+                temperature=llm_config["temperature"],
+                max_tokens=llm_config["max_tokens"],
             )
-        elif self.provider == "deepseek":
+        elif llm_config["api_provider"] == "deepseek":
             from langchain_deepseek import ChatDeepSeek
             return ChatDeepSeek(
-                api_key=self.api_key,
-                model=self.model,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
+                api_key=llm_config["api_key"],
+                model=llm_config["model"],
+                temperature=llm_config["temperature"],
+                max_tokens=llm_config["max_tokens"],
             )
-        elif self.provider == "anthropic":
+        elif llm_config["api_provider"] == "anthropic":
             from langchain_anthropic import ChatAnthropic
             return ChatAnthropic(
-                anthropic_api_key=self.api_key,
-                model=self.model,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
+                anthropic_api_key=llm_config["api_key"],
+                model=llm_config["model"],
+                temperature=llm_config["temperature"],
+                max_tokens=llm_config["max_tokens"],
             )
         else:
             raise ValueError("Unsupported LLM provider")
 
 llm_loader = LlmLoader()
-

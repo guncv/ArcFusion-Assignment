@@ -1,10 +1,3 @@
-"""
-Repository layer for data access patterns.
-
-This layer provides a clean abstraction over database operations,
-separating data access logic from business logic.
-"""
-
 from src.repositories.chat_history import (
     ChatHistoryRepository,
     get_chat_history_repository

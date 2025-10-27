@@ -61,7 +61,7 @@ class ReActAgent(AgentInterface):
         include_history: bool = False,
         state: Optional[WorkflowState] = None
     ) -> List[Dict[str, str]]:
-        """Build message list for agent, optionally including chat history."""
+        # Build message list for agent, optionally including chat history.
         messages = []
 
         if include_history and state:

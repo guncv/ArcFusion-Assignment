@@ -13,7 +13,7 @@ class LLMType(Enum):
     WEB_SEARCH_AGENT = "web_search_agent"
     SYNTHESIZER_AGENT = "synthesizer_agent"
     REFLECTION_AGENT = "reflection_agent"
-    RESPONSE_EVALUATOR = "response_evaluator"
+    EVALUATION_AGENT = "evaluation_agent"
 
 class LLMAgentName(Enum):
     INIT_ROUTER_AGENT = "InitRouterAgent"
@@ -27,3 +27,4 @@ class LLMAgentName(Enum):
     WEB_SEARCH_AGENT = "WebSearchAgent"
     SYNTHESIZER_AGENT = "SynthesizerAgent"
     REFLECTION_AGENT = "ReflectionAgent"
+    EVALUATION_AGENT = "EvaluationAgent"

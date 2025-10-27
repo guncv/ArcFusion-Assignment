@@ -4,7 +4,7 @@ import re
 from typing import Dict, Any
 from dotenv import load_dotenv
 
-load_dotenv('.env.dev')
+load_dotenv('.env')
 
 class ConfigLoader:
     def __init__(self, environment: str = None):

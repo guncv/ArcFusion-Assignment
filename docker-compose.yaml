@@ -10,7 +10,7 @@ services:
     environment:
       - ENV=dev
     env_file:
-      - .env.dev
+      - .env
     networks:
       - arc-fusion-network
     depends_on:

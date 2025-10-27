@@ -26,6 +26,10 @@ class SynthesizerAgent(AgentInterface):
         self.web_chain = CURRENT_WEB_SYNTHESIZER_PROMPT | self.llm | StrOutputParser()
         self.merged_chain = MERGED_SYNTHESIZER_PROMPT | self.llm | StrOutputParser()
         self._agent_name = LLMAgentName.SYNTHESIZER_AGENT.value
+
+    @property
+    def name(self) -> str:
+        return self._agent_name or super().name
     
     @property
     def evaluation_service(self):
@@ -33,10 +37,6 @@ class SynthesizerAgent(AgentInterface):
             from src.services.evaluation_service import get_evaluation_service
             self._evaluation_service = get_evaluation_service()
         return self._evaluation_service
-
-    @property
-    def name(self) -> str:
-        return self._agent_name or super().name
 
     async def ainvoke(self, state: WorkflowState) -> WorkflowState:
         try:
@@ -64,30 +64,24 @@ class SynthesizerAgent(AgentInterface):
                     "web_context": web_context,
                 })
             else:
-                # Fallback: if no tool selected, return empty current response
                 current_response = ""
 
-            # Generate merged response (old_response + current_response)
             merged_response = await self.merged_chain.ainvoke({
                 "user_query": query,
                 "old_response": old_response,
                 "current_response": current_response,
             })
 
-            # Prepare updated state
             updated_state = {
                 **state,
                 "current_synthesized_response": current_response,
                 "response": merged_response,
             }
 
-            # Trigger background evaluation (fire-and-forget, non-blocking)
             try:
                 asyncio.create_task(self.evaluation_service.evaluate_and_save(updated_state))
-                logger.info("Background evaluation triggered successfully")
-            except Exception as eval_error:
-                # Don't fail synthesis if evaluation trigger fails
-                logger.error(f"Failed to trigger evaluation: {eval_error}")
+            except Exception as e:
+                logger.error(f"Failed to trigger evaluation: {e}")
 
             return updated_state
 

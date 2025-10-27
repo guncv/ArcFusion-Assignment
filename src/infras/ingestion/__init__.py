@@ -1,5 +1,3 @@
-"""Ingestion module - Document reading and processing."""
-
 from src.infras.ingestion.base import BaseReader
 from src.infras.ingestion.factory import ReaderFactory
 from src.infras.ingestion.document_processor import DocumentProcessor

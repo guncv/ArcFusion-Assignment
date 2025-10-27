@@ -92,7 +92,7 @@ PLANNER_PROMPT = ChatPromptTemplate.from_messages([
 
     **Each query MUST target DIFFERENT information:**
 
-    ❌ **BAD (repetitive)**:
+    **BAD (repetitive)**:
     ```
     "richest person 2024"
     "billionaire rankings 2024"
@@ -100,7 +100,7 @@ PLANNER_PROMPT = ChatPromptTemplate.from_messages([
     ```
     → All find the SAME info with different words!
 
-    ✅ **GOOD (diverse)**:
+    **GOOD (diverse)**:
     ```
     "richest person world 2025"           (Direct answer)
     "Elon Musk Tesla SpaceX valuation"   (Background/details)

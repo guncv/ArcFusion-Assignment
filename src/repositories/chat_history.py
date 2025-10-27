@@ -1,6 +1,5 @@
 from typing import List, Optional
 from sqlalchemy import select, delete
-from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.chat_message import ChatMessage
 from src.infras.database.postgres import postgres_database
 from src.infras.log import logger
@@ -25,7 +24,7 @@ class ChatHistoryRepository:
                     session_id=session_id,
                     message_type=message_type,
                     content=content,
-                    sequence=next_sequence
+                    sequence=next_sequence,
                 )
 
                 session.add(chat_message)
@@ -66,37 +65,7 @@ class ChatHistoryRepository:
             logger.error(f"Failed to retrieve chat messages: {e}")
             return []
 
-    async def get_latest_messages(
-        self,
-        session_id: str,
-        count: int = 10
-    ) -> List[ChatMessage]:
-        try:
-            async with self.db.async_session_factory() as session:
-                result = await session.execute(
-                    select(ChatMessage)
-                    .where(ChatMessage.session_id == session_id)
-                    .order_by(ChatMessage.sequence.desc())
-                    .limit(count)
-                )
-                messages = result.scalars().all()
-
-                return list(reversed(messages))
-
-        except Exception as e:
-            logger.error(f"Failed to retrieve latest messages: {e}")
-            return []
-
     async def clear_session(self, session_id: str) -> bool:
-        """
-        Delete all messages for a session.
-
-        Args:
-            session_id: The conversation session ID
-
-        Returns:
-            True if successful, False otherwise
-        """
         try:
             async with self.db.async_session_factory() as session:
                 await session.execute(

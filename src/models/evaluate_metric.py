@@ -1,9 +1,8 @@
 from sqlalchemy import Column, String, Float, Text, DateTime, JSON, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
 import uuid
-
+from datetime import datetime
 Base = declarative_base()
 
 class EvaluationMetrics(Base):
@@ -32,7 +31,7 @@ class EvaluationMetrics(Base):
     additional_metadata = Column("metadata", JSON, nullable=True)  # Extra info like num_documents, etc.
 
     # Timestamp
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.now, nullable=False, index=True)
 
     def __repr__(self):
         return f"<EvaluationMetrics(id={self.id}, tool={self.tool_type}, confidence={self.confidence_score})>"
