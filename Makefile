@@ -17,9 +17,6 @@ build:
 clean:
 	$(dc) down --rmi all --volumes --remove-orphans
 
-logs:
-	$(dc) logs -f
-
 restart:
 	$(dc) restart
 

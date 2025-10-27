@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import List
 from llama_index.core.schema import Document as LlamaDocument, TextNode
 
-
 class BaseChunker(ABC):
 
     @abstractmethod

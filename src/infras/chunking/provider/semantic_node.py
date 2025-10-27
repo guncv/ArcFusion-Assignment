@@ -1,7 +1,6 @@
 from typing import List
 from llama_index.core.node_parser import SemanticSplitterNodeParser
 from llama_index.core.schema import Document as LlamaDocument, TextNode
-
 from src.infras.chunking.base import BaseChunker
 from src.infras.embedding.base import BaseEmbedding
 

@@ -1,6 +1,5 @@
 
 from functools import lru_cache
-
 from src.config import config
 from src.infras.chunking.base import BaseChunker
 from src.infras.chunking.provider.semantic_node import SemanticNodeChunker

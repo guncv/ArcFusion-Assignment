@@ -1,6 +1,5 @@
 from typing import List
 from langchain_core.documents import Document
-from src.graph import WorkflowState
 from src.constants import LLMAgentName
 from src.infras.web_search.factory import web_search_factory
 from src.utils import ArcFusionException
