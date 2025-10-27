@@ -11,17 +11,25 @@ from src.constants import ArcFusionErrorCodes
 from src.graph import get_workflow_graph
 from src.constants import SESSION_ID_KEY
 from src.infras.web_search.factory import web_search_factory
+from src.repositories.chat_history import get_chat_history_repository
 
 class LLMService:
     def __init__(self):
         self._workflow_graph = None
-        self.web_search_tool = web_search_factory.get_provider()
-    
+        self._web_search_tool = None
+        self.chat_history_repo = get_chat_history_repository()
+
     @property
     def workflow_graph(self):
         if self._workflow_graph is None:
             self._workflow_graph = get_workflow_graph()
         return self._workflow_graph
+
+    @property
+    def web_search_tool(self):
+        if self._web_search_tool is None:
+            self._web_search_tool = web_search_factory.get_provider()
+        return self._web_search_tool
         
     async def health_check(self) -> HealthCheckResp:
         try:
@@ -45,15 +53,11 @@ class LLMService:
             raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
         
     async def clear_chat_history(self) -> ClearHistoryResponse:
-        # TODO: Implement clear chat history functionality
-        # This would need to clear all chat history from the database
-        return ClearHistoryResponse(message="Chat history cleared successfully")
         
-    async def web_search(self, query: str) -> List[Document]:
-        try:
-            results = self.web_search_tool.search_as_documents(query)
-            return results
-        except Exception as e:
-            raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description=f"[{type(e).__name__}]: {str(e)}")
+        resp = await self.chat_history_repo.clear_session(SESSION_ID_KEY)
+        if not resp:
+            raise ArcFusionException(error_code=ArcFusionErrorCodes.INTERNAL_ERROR, description="Failed to clear chat history")
+
+        return ClearHistoryResponse(message="Chat history cleared successfully")
         
 llm_service = LLMService()

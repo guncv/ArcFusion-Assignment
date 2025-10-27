@@ -34,7 +34,7 @@ class SynthesizerAgent(AgentInterface):
     @property
     def evaluation_service(self):
         if self._evaluation_service is None:
-            from src.services.evaluation_service import get_evaluation_service
+            from src.services.evaluation import get_evaluation_service
             self._evaluation_service = get_evaluation_service()
         return self._evaluation_service
 

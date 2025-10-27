@@ -1,11 +1,9 @@
-from typing import Dict, Any, Optional
+from typing import Optional
 from functools import lru_cache
-
 from src.config import config
 from src.infras.retrieval.base import BaseRetriever
-from src.infras.retrieval.providers.vector import VectorRetriever
-from src.infras.vector_db.factory import VectorStoreFactory
-from src.infras.vector_db.base import BaseVectorStore
+from src.infras.retrieval.providers import VectorRetriever
+from src.infras.vector_db import VectorStoreFactory, BaseVectorStore
 
 class RetrieverFactory:
 

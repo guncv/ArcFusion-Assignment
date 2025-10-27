@@ -28,26 +28,27 @@ CLARIFICATION_PROMPT = """
 
     ## Classification Criteria
 
-    ### "smalltalk" - Route to small talk agent
-    Casual conversation without information needs: greetings, acknowledgments, social pleasantries, reactions without questions.
+    ### "smalltalk"
+    Casual conversation: greetings, acknowledgments, thanks, social pleasantries.
 
-    ### "needs_more_detail" - Ask clarifying questions
-    **Core principle**: Query lacks sufficient context to understand what the user wants.
-    - Relative references without context ("more", "it", "that", "this", "those") when chat history is empty or insufficient
-    - Ambiguous subjects without specification
-    - Overly broad or vague requests
+    ### "needs_more_detail"
+    Query lacks sufficient context AND chat history doesn't help.
+    **Only use when**: No clear subject can be identified from query or history.
 
-    **Key rule**: If query depends on prior context but history is empty/unclear → needs_more_detail
+    ### "process_query"
+    Query has enough context to answer, either from:
+    - Clear self-contained question
+    - Subject identifiable from chat history (even if question is broad)
 
-    ### "process_query" - Process the query normally
-    Query has sufficient context to understand intent, either from:
-    - Clear, self-contained question/request
-    - Sufficient chat history to resolve references
+    ## Key Principles
+    1. **Trust chat history**: If a subject/topic appears in history, assume user is still asking about it
+    2. **Be lenient**: Broad questions about a known subject → process_query (let downstream agents handle it)
+    3. **Only block on**: Truly ambiguous queries with no context anywhere
 
     ## Decision Priority
-    1. Is it small talk? → smalltalk
-    2. Does it lack necessary context? → needs_more_detail
-    3. Otherwise → process_query
+    1. Small talk? → smalltalk
+    2. Subject identifiable from query or history? → process_query
+    3. Completely ambiguous with no context? → needs_more_detail
 
     ## Examples
 

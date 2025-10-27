@@ -82,8 +82,5 @@ class ConfigLoader:
         except Exception as e:
             raise RuntimeError(f"Error loading config: {e}")
 
-
 config_loader = ConfigLoader()
-api_config = config_loader.get_dict()
-
 nested_config = config_loader.get_nested_dict()

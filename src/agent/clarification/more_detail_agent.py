@@ -32,6 +32,3 @@ class MoreDetailAgent(RunnableAgent):
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
-
-# Note: more_detail_agent should be instantiated with proper arguments when needed
-# more_detail_agent = MoreDetailAgent()

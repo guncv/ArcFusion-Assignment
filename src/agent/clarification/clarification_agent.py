@@ -94,6 +94,3 @@ class ClarificationAgent(ReActAgent):
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
-
-# Note: clarification_agent should be instantiated with proper arguments when needed
-# clarification_agent = ClarificationAgent()

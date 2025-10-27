@@ -1,8 +1,6 @@
 from typing import Dict, Any, Optional, TYPE_CHECKING
-
 if TYPE_CHECKING:
     from src.graph.state import WorkflowState
-
 from src.agent.evaluation import EvaluationAgent
 from src.repositories.evaluation import get_evaluation_repository
 from src.infras.log import logger
@@ -10,8 +8,20 @@ from src.infras.log import logger
 class EvaluationService:
 
     def __init__(self):
-        self.evaluator = EvaluationAgent()
-        self.evaluation_repo = get_evaluation_repository()
+        self._evaluator_agent = None
+        self._evaluation_repo = None
+
+    @property
+    def evaluator(self):
+        if self._evaluator_agent is None:
+            self._evaluator_agent = EvaluationAgent()
+        return self._evaluator
+    
+    @property
+    def evaluation_repo(self):
+        if self._evaluation_repo is None:
+            self._evaluation_repo = get_evaluation_repository()
+        return self._evaluation_repo
 
     async def evaluate_and_save(self, state: 'WorkflowState') -> None:
         try:

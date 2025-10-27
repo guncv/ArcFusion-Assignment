@@ -53,6 +53,3 @@ class RefinedQueryAgent(RunnableAgent):
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
-
-# Note: refined_query_agent should be instantiated with proper arguments when needed
-# refined_query_agent = RefinedQueryAgent()

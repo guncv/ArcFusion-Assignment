@@ -1,4 +1,4 @@
-from src.services.evaluation_service import EvaluationService, get_evaluation_service
+from src.services.evaluation import EvaluationService, get_evaluation_service
 from src.services.llm import LLMService, llm_service
 
 __all__ = [
