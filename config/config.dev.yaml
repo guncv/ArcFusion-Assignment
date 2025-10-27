@@ -138,16 +138,7 @@ vector_db:
   chroma:
     collection_name: "arcfusion_docs"
     persist_directory: "${VECTOR_DB_PERSIST_DIR:./.chroma}"
-
-  pinecone:
-    index_name: "${PINECONE_IDX_NAME:arc-fusion-dev}"
-    api_key: "${PINECONE_API_KEY}"
-    environment: "${PINECONE_ENV:us-east-1-aws}"
-    dimensions: "${PINECONE_DIMS:1536}"
-    metric: "${PINECONE_METRIC:cosine}"
-    cloud: "${PINECONE_CLOUD:aws}"
-    region: "${PINECONE_REGION:us-east-1}"
-
+    
 rag:
   auto_ingestion:
     enabled: true

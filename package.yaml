@@ -26,13 +26,11 @@ dependencies:
       - loguru
       - coloredlogs
       - python-json-logger
-      - sentence-transformers
       - redis==5.0.7
       - langchain-openai>=0.2.0
       - langchain-anthropic
       - langchain-deepseek
       - prometheus-fastapi-instrumentator
-      - PyMuPDF
       - PyJWT
       - numpy
       - language-tool-python>=2.8.0
@@ -43,6 +41,5 @@ dependencies:
       - rank_bm25
       - langchain-experimental
       - llama-index
-      - llama-index-vector-stores-chroma
-      - llama-index-vector-stores-pinecone
+      - llama-index-vector-stores-chroma 
       - "unstructured[pdf]"

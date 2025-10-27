@@ -2,7 +2,6 @@ from functools import lru_cache
 from src.config import config
 from src.infras.vector_db.base import BaseVectorStore
 from src.infras.vector_db.providers.chroma import ChromaVectorStoreProvider
-from src.infras.vector_db.providers.pinecone import PineconeVectorStoreProvider
 from src.infras.embedding.factory import EmbeddingFactory
 
 class VectorStoreFactory:
