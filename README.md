@@ -103,7 +103,7 @@ ArcFusion is an advanced multi-agent LLM system built with LangGraph that intell
 
 1. **Clone the repository**
 ```bash
-git clone <repository-url>
+git clone https://github.com/guncv/ArcFusion-Assignment.git
 cd ArcFusion-Assignment
 ```
 
@@ -114,8 +114,9 @@ Create a `.env` file in the project root with your configuration:
 ```env
 # LLM Configuration
 OPENAI_API_KEY=your_openai_api_key_here
-# ANTHROPIC_API_KEY=your_anthropic_key  # Optional
-# DEEPSEEK_API_KEY=your_deepseek_key     # Optional
+TAVILY_API_KEY=your_tavily_api_key
+# Application Configuration
+ENV=dev
 
 # Database Configuration (matches docker-compose.yaml)
 POSTGRES_USER=arcfusion
@@ -124,14 +125,11 @@ POSTGRES_DB=arcfusion
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 
-# Application Configuration
-ENV=dev
-LOG_LEVEL=INFO
-
-# Optional: LangSmith for tracing
-LANGSMITH_API_KEY=your_langsmith_key  # Optional
-LANGSMITH_PROJECT=arcfusion           # Optional
-LANGSMITH_TRACING=false               # Set to true to enable
+# LangSmith for tracing
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_ENDPOINT=https://eu.api.smith.langchain.com
+LANGCHAIN_API_KEY="your_langsmith_key"
+LANGCHAIN_PROJECT=arcfusion-dev
 ```
 
 3. **Build and run with Docker Compose**
@@ -177,33 +175,24 @@ make clean
 ## 🔮 Future Improvements
 
 ### 1. RAG System Optimization (High Priority)
-- **Optimize Chunking Strategy**: Currently using LlamaIndex SemanticSplitterNodeParser which may be overkill. Explore simpler, faster chunking methods (fixed-size with overlap, sentence-based) that reduce processing time and costs while maintaining quality
-- **Improve Ingestion Pipeline**: Reduce dependencies and complexity (currently using Unstructured.io with Java requirements). Consider lighter alternatives like PyPDF2 or pdfplumber for faster, cheaper processing
-- **Enhance Retrieval**: Experiment with different embedding models to find the best fit for research papers. Current approach may be too resource-intensive. Test models like `text-embedding-ada-002` vs `text-embedding-3-small` for cost-performance balance
-- **Performance vs Cost**: Current RAG implementation uses too much time and cost. Need to find the right balance between quality and efficiency for the Text-to-SQL research paper use case
+- **Replace Ingestion Method**: Currently using LlamaIndex's UnstructuredReader with Java dependencies. Should to replace with a lighter, more efficient alternative like **PyPDF2** or **pypdf** for basic PDF extraction, or use **LangChain's PyPDFLoader** which doesn't require Java
+- **Rethink Chunking Strategy**: Current LlamaIndex SemanticSplitterNodeParser is overkill and resource-intensive. Should migrate to simpler chunking:
+  - **LangChain RecursiveCharacterTextSplitter** with fixed chunk size (e.g., 500-1000 chars) and overlap
+  - **Semantic chunking** alternatives like **NLTK sentence tokenization + similarity-based grouping**
+- **Simplify Dependency Chain**: Remove heavy Unstructured.io + LlamaIndex stack. Use direct LangChain document loaders + splitters for better performance and lower costs
+- **Find the Right Balance**: Focus on practical efficiency - current setup is too complex for the use case. Simpler = faster = cheaper
 
-### 2. Prompt Optimization (High Priority)
+### 2. Prompt Optimization (Medium Priority)
 - **Reduce Prompt Length**: Current prompts may be verbose. Refactor to be shorter while maintaining clarity and effectiveness
 - **Tailor to Agent Use Cases**: Each agent should have prompts optimized specifically for its role - remove generic instructions and focus on what matters
 - **Cost Reduction**: Shorter prompts = lower token usage = reduced LLM costs across all 12 agents
 - **Implement Prompt Templates**: Create concise, reusable templates that can be version-controlled and A/B tested
 
-### 3. Chat History & Performance (High Priority)
+### 3. Chat History & Performance (Low Priority)
 - **Add Redis Caching**: Move chat history from PostgreSQL-only to hybrid Redis + PostgreSQL for faster retrieval
 - **Benefits**: Redis provides sub-millisecond access times for active conversations, PostgreSQL for long-term persistence
 - **Implementation**: Use Redis for hot data (recent sessions), PostgreSQL for cold data and analytics
 - **Reduce Database Load**: Lighten PostgreSQL workload by serving frequently accessed data from memory
-
-### 4. Production-Ready Features
-- **Streaming Responses**: Implement SSE (Server-Sent Events) for real-time response streaming
-- **Rate Limiting**: Protect API endpoints with Redis-based rate limiting
-- **Authentication & Authorization**: User management with JWT tokens
-- **Monitoring Dashboard**: Basic health metrics and performance tracking
-
-### 5. Cost & Performance Optimization
-- **LLM Response Caching**: Cache similar queries to avoid redundant API calls
-- **Smart Model Selection**: Use cheaper models for simple tasks, premium models for complex reasoning
-- **Reduce Agent Calls**: Optimize workflow to minimize unnecessary agent invocations
 
 ## 📦 Docker Files Included
 
