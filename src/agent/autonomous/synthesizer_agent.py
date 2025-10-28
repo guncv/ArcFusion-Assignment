@@ -1,3 +1,4 @@
+import asyncio
 from langchain_core.output_parsers import StrOutputParser
 from src.graph import WorkflowState, ToolType
 from src.constants import LLMAgentName, LLMType
@@ -15,6 +16,7 @@ from src.utils.format import (
     format_web_context,
     format_rag_documents_context
 )
+from src.infras.log import logger
 
 class SynthesizerAgent(AgentInterface):
     def __init__(self):
@@ -72,12 +74,18 @@ class SynthesizerAgent(AgentInterface):
             else:
                 current_response = ""
 
-            # Synthesis completed - MetaAssessor will evaluate quality
+            # Synthesis completed
             updated_state = {
                 **state,
                 "response": current_response,
             }
 
+            # Run evaluation in background (async, non-blocking)
+            if selected_tool and current_response:
+                asyncio.create_task(
+                    self._run_background_evaluation(updated_state)
+                )
+            
             return updated_state
 
         except Exception as e:
@@ -85,3 +93,10 @@ class SynthesizerAgent(AgentInterface):
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
+    
+    async def _run_background_evaluation(self, state: WorkflowState) -> None:
+        try:
+            await self.evaluation_service.evaluate_and_save(state)
+        except Exception as e:
+            session_id = state.get("session_id", "unknown")
+            logger.error(f"[{session_id}] Background evaluation failed: {e}", exc_info=True)

@@ -15,7 +15,7 @@ class EvaluationService:
     def evaluator(self):
         if self._evaluator_agent is None:
             self._evaluator_agent = EvaluationAgent()
-        return self._evaluator
+        return self._evaluator_agent
     
     @property
     def evaluation_repo(self):
@@ -26,7 +26,7 @@ class EvaluationService:
     async def evaluate_and_save(self, state: 'WorkflowState') -> None:
         try:
             selected_tool = state.get("selected_tool", "")
-            current_response = state.get("current_synthesized_response", "")
+            current_response = state.get("response", "")
             session_id = state.get("session_id", "unknown")
             user_query = state.get("user_query", "")
 
