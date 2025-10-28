@@ -1,5 +1,6 @@
 from typing import List, Optional, Dict, Any
 from langchain.agents import create_agent
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import BaseTool
 from src.graph import WorkflowState
 from src.constants import LLMType
@@ -88,6 +89,15 @@ class ReActAgent(AgentInterface):
     async def ainvoke_agent(self, messages: List[Dict[str, str]]) -> Dict[str, Any]:
         # Invoke the ReAct agent with messages.
         return await self.agent.ainvoke({"messages": messages})
+
+    def _convert_chat_messages_to_langchain(self, chat_messages):
+        langchain_messages = []
+        for msg in chat_messages:
+            if msg.message_type == 'human':
+                langchain_messages.append(HumanMessage(content=msg.content))
+            elif msg.message_type == 'ai':
+                langchain_messages.append(AIMessage(content=msg.content))
+        return langchain_messages
 
     def extract_tool_result(
         self,
