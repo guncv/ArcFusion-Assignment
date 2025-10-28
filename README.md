@@ -155,25 +155,11 @@ The system auto-ingests PDF documents from the `documents/` folder on startup. T
 
 5. **Test the API**
 
-Visit the interactive API docs at http://localhost:8000/api/v1/docs or use curl commands.
-
 | Endpoint | Method | Request | Response |
 |----------|--------|---------|----------|
-| **Chat with LLM** | `POST /api/v1/llm/` | ```bash<br>curl -X POST "http://localhost:8000/api/v1/llm/" \<br>  -H "Content-Type: application/json" \<br>  -d '{<br>    "user_input": "What approaches are used for text-to-SQL?"<br>  }'<br>``` | ```json<br>{<br>  "response": "Based on the research papers, several approaches are used for text-to-SQL conversion:\\n\\n1. **Prompting Techniques**: Zero-shot and few-shot prompting with large language models like GPT-3 and Codex...\\n\\n2. **Deep Learning Models**: Neural network architectures including sequence-to-sequence models with attention mechanisms...\\n\\n3. **Pre-trained Language Models**: Fine-tuning models like BERT, T5, and GPT for SQL generation tasks...\\n\\nThese approaches are discussed in detail in the retrieved documents."<br>}<br>``` |
-| **Clear Chat History** | `POST /api/v1/llm/clear-history` | ```bash<br>curl -X POST "http://localhost:8000/api/v1/llm/clear-history" \<br>  -H "Content-Type: application/json"<br>``` | ```json<br>{<br>  "message": "Chat history cleared successfully"<br>}<br>``` |
-| **Health Check** | `GET /api/v1/llm/health-check` | ```bash<br>curl -X GET "http://localhost:8000/api/v1/llm/health-check"<br>``` | ```json<br>{<br>  "status": "ok"<br>}<br>``` |
-
-### Available Make Commands
-
-```bash
-make build      # Build Docker images
-make run        # Start services
-make down       # Stop services
-make clean      # Remove all containers, images, and volumes
-make restart    # Restart services
-make ps         # Show running containers
-make rebuild    # Clean build and run
-```
+| **Chat with LLM** | `POST /api/v1/llm/` | ```"user_input": "What did OpenAI release this month?"``` | ```In October 2025, OpenAI made several significant releases and announcements``` |
+| **Clear Chat History** | `POST /api/v1/llm/clear-history` | ```-``` | ```"message": "Chat history cleared successfully"``` |
+| **Health Check** | `GET /api/v1/llm/health-check` | ```-``` | ```"status": "ok"``` |
 
 ### Stopping the Application
 
