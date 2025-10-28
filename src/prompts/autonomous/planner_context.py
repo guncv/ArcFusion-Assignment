@@ -56,8 +56,8 @@ REPLANNING_CONTEXT_TEMPLATE = """
   - **Tool Used:** {previous_tool}
   - **Current Response:** {current_response}
 
-  ## Reflection Feedback
-  {reflection_comment}
+  ## Comment
+  {comment}
 
   ## Available Tools
   **rag_search** - Search internal PDF documents
@@ -76,13 +76,13 @@ REPLANNING_CONTEXT_TEMPLATE = """
 
   2. **If confidence >= 0.6 (Answer Incomplete):**
     - Retrieved info was good, but answer missing details
-    - Read reflection feedback to identify what's missing
+    - Read comment to identify what's missing
     - Generate targeted query for missing information
     - Usually needs web_search for additional context (author bios, recent updates, etc.)
 
   **Decision Process:**
 
-  1. Read reflection feedback carefully
+  1. Read comment carefully
   2. Identify WHAT specific information is missing
   3. Decide if switching tools would help OR if better query needed
   4. Generate ONE focused query addressing the gaps
@@ -95,14 +95,14 @@ REPLANNING_CONTEXT_TEMPLATE = """
 
   **Example Scenarios:**
 
-  - Reflection says "documents not relevant" + confidence=0.25 + used rag_search
+  - Comment says "documents not relevant" + confidence=0.25 + used rag_search
     → Switch to web_search with same/similar query
 
-  - Reflection says "missing author affiliations" + confidence=0.85 + used rag_search
+  - Comment says "missing author affiliations" + confidence=0.85 + used rag_search
     → Use web_search to find "Zhang et al. 2024 authors affiliations institutions"
 
-  - Reflection says "need more recent data" + confidence=0.40 + used web_search
+  - Comment says "need more recent data" + confidence=0.40 + used web_search
     → Keep web_search but refine query with more specific keywords
 
-  **Remember:** You're AUTONOMOUS - think and rethink! What went wrong? How can you fix it?
+  **Remember:** You're autonomous - think and rethink! What went wrong? How can you fix it?
 """

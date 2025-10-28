@@ -17,14 +17,7 @@ class ToolType(Enum):
     RAG_SEARCH = "rag_search"  # Search internal documents/knowledge base
     WEB_SEARCH = "web_search"  # Search external web sources
     HYBRID_SEARCH = "hybrid_search"  # Search both RAG and Web in parallel
-
-class ReflectionAction(Enum):
-    # Reflection Agent next action decisions
-    DONE = "done"  # Answer is complete, end workflow
-    SWITCH_TO_WEBSEARCH = "switch_to_websearch"  # RAG failed, switch to web
-    REPLAN_WITH_DIFFERENT_QUERY = "replan_with_different_query"  # Try different query (same tool)
-    ADD_WEB_DETAILS = "add_web_details"  # Add more information via web search
-
+    
 class RetrievedDocument(TypedDict):
     document: Document
     score: float

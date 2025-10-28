@@ -1,10 +1,9 @@
-from .state import WorkflowState, RoutingDecision, ToolType, ReflectionAction
+from .state import WorkflowState, RoutingDecision, ToolType
 
 __all__ = [
     "WorkflowState",
     "RoutingDecision",
     "ToolType",
-    "ReflectionAction",
 ]
 
 def get_workflow_graph():

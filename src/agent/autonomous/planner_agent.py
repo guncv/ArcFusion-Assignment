@@ -50,7 +50,7 @@ class PlannerAgent(RunnableAgent):
 
             # Replanning (autonomous rethinking based on reflection feedback)
             if autonomous_attempts > 0:
-                reflection_comment = state.get("reflection_comment", "")
+                comment = state.get("comment", "")
                 current_response = state.get("response", "")
                 previous_tool = state.get("selected_tool", "unknown")
 
@@ -58,7 +58,7 @@ class PlannerAgent(RunnableAgent):
                     user_query=user_query,
                     previous_tool=previous_tool,
                     current_response=current_response,
-                    reflection_comment=reflection_comment,
+                    comment=comment,
                     attempt_number=autonomous_attempts,
                 )
             # Initial planning (autonomous tool selection)

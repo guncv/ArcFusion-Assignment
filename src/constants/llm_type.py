@@ -14,7 +14,6 @@ class LLMType(Enum):
     HYBRID_RETRIEVAL_AGENT = "hybrid_retrieval_agent"
     META_ASSESSOR_AGENT = "meta_assessor_agent"
     SYNTHESIZER_AGENT = "synthesizer_agent"
-    REFLECTION_AGENT = "reflection_agent"
     EVALUATION_AGENT = "evaluation_agent"
 
 class LLMAgentName(Enum):
@@ -29,5 +28,4 @@ class LLMAgentName(Enum):
     HYBRID_RETRIEVAL_AGENT = "HybridRetrievalAgent"
     META_ASSESSOR_AGENT = "MetaAssessorAgent"
     SYNTHESIZER_AGENT = "SynthesizerAgent"
-    REFLECTION_AGENT = "ReflectionAgent"
     EVALUATION_AGENT = "EvaluationAgent"
