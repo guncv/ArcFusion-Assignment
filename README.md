@@ -96,7 +96,6 @@ ArcFusion is an advanced multi-agent LLM system built with LangGraph that intell
 ### Prerequisites
 
 - Docker and Docker Compose installed
-- At least 4GB of available RAM
 - OpenAI API key (or other LLM provider key)
 
 ### Setup Steps
