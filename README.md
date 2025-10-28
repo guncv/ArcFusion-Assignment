@@ -7,34 +7,6 @@ ArcFusion is an advanced multi-agent LLM system built with LangGraph that intell
 ### System Architecture Diagram
 ![System Architecture](./workflow_diagram.png)
 
-### Architecture Description
-
-ArcFusion implements a sophisticated multi-stage workflow orchestrated using LangGraph's state management:
-
-**Stage 1: Query Classification & Clarification**
-- User queries are first analyzed to determine if they are clear, ambiguous, or require clarification
-- Ambiguous queries go through a clarification stage that can result in small talk, requesting more detail, or refined query processing
-
-**Stage 2: Autonomous Planning**
-- The Planner Agent autonomously selects the optimal retrieval strategy:
-  - **RAG Search**: For queries best answered by internal documents
-  - **Web Search**: For queries requiring up-to-date external information
-  - **Hybrid Search**: For complex queries needing both internal and external sources
-- Generates optimized search queries tailored to the selected tool
-
-**Stage 3: Information Retrieval**
-- Executes the selected retrieval strategy in parallel when applicable
-- Retrieves relevant information from vector databases (ChromaDB) and/or web sources
-
-**Stage 4: Response Synthesis**
-- Synthesizer Agent generates comprehensive answers from retrieved information
-- Uses context-aware prompts optimized for RAG, Web, or combined sources
-
-**Stage 5: Meta-Assessment & Replanning**
-- Meta-Assessor evaluates answer quality with confidence scoring
-- If quality is insufficient, triggers replanning (up to 3 attempts)
-- Ensures only high-confidence answers are returned to users
-
 ## 🤖 Agent Descriptions
 
 ### Clarification Agents
@@ -102,6 +74,8 @@ ArcFusion implements a sophisticated multi-stage workflow orchestrated using Lan
   - Low confidence (<0.7): Trigger replanning (up to 3 attempts)
 - **Prevents**: Hallucinations and low-quality responses
 
+### Evaluation Agents
+
 #### 12. EvaluationAgent
 - **Purpose**: Performs comprehensive quality evaluation and analytics (runs asynchronously in background)
 - **Execution**: Triggered by Synthesizer after response generation, non-blocking
@@ -116,13 +90,6 @@ ArcFusion implements a sophisticated multi-stage workflow orchestrated using Lan
 - **Confidence Calculation**: Weighted combination of all metrics for comprehensive quality score
 - **Database Persistence**: Saves evaluation metrics for analytics, monitoring, and continuous improvement
 - **Note**: Separate from MetaAssessorAgent; runs in background for analytics while MetaAssessor drives workflow decisions
-
-### Supporting Components
-
-- **WorkflowGraph**: LangGraph orchestrator managing agent transitions
-- **State Management**: Maintains context across agent invocations
-- **Chat History Repository**: Persists conversations in PostgreSQL
-- **Document Ingestion Pipeline**: Auto-ingests PDFs on startup
 
 ## 🚀 How to Run Locally
 
@@ -188,16 +155,13 @@ The system auto-ingests PDF documents from the `documents/` folder on startup. T
 
 5. **Test the API**
 
-Visit the interactive API docs at http://localhost:8000/api/v1/docs or use curl:
+Visit the interactive API docs at http://localhost:8000/api/v1/docs or use curl commands.
 
-```bash
-curl -X POST "http://localhost:8000/api/v1/chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "What approaches are used for text-to-SQL?",
-    "session_id": "test-session-1"
-  }'
-```
+| Endpoint | Method | Request | Response |
+|----------|--------|---------|----------|
+| **Chat with LLM** | `POST /api/v1/llm/` | ```bash<br>curl -X POST "http://localhost:8000/api/v1/llm/" \<br>  -H "Content-Type: application/json" \<br>  -d '{<br>    "user_input": "What approaches are used for text-to-SQL?"<br>  }'<br>``` | ```json<br>{<br>  "response": "Based on the research papers, several approaches are used for text-to-SQL conversion:\\n\\n1. **Prompting Techniques**: Zero-shot and few-shot prompting with large language models like GPT-3 and Codex...\\n\\n2. **Deep Learning Models**: Neural network architectures including sequence-to-sequence models with attention mechanisms...\\n\\n3. **Pre-trained Language Models**: Fine-tuning models like BERT, T5, and GPT for SQL generation tasks...\\n\\nThese approaches are discussed in detail in the retrieved documents."<br>}<br>``` |
+| **Clear Chat History** | `POST /api/v1/llm/clear-history` | ```bash<br>curl -X POST "http://localhost:8000/api/v1/llm/clear-history" \<br>  -H "Content-Type: application/json"<br>``` | ```json<br>{<br>  "message": "Chat history cleared successfully"<br>}<br>``` |
+| **Health Check** | `GET /api/v1/llm/health-check` | ```bash<br>curl -X GET "http://localhost:8000/api/v1/llm/health-check"<br>``` | ```json<br>{<br>  "status": "ok"<br>}<br>``` |
 
 ### Available Make Commands
 
