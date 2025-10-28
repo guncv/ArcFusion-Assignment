@@ -1,131 +1,59 @@
-# ArcFusion - Intelligent Multi-Agent RAG System
+# 🚀 ArcFusion - Intelligent Multi-Agent RAG System
 
-An advanced multi-agent Retrieval Augmented Generation (RAG) system built with LangGraph, featuring autonomous tool selection, query refinement, and dual-mode evaluation.
+An advanced multi-agent Retrieval Augmented Generation (RAG) system built with **LangGraph**, featuring autonomous tool selection, query clarification, hybrid retrieval (RAG + Web Search), and intelligent replanning.
 
-## Table of Contents
+> **Assignment**: Multi-Agent Chat with PDF System for Research Workflow Acceleration
+
+## 📋 Table of Contents
 - [Architecture Overview](#architecture-overview)
 - [Agent Descriptions](#agent-descriptions)
 - [How to Run Locally](#how-to-run-locally)
 - [API Documentation](#api-documentation)
 - [Future Improvements](#future-improvements)
+- [Technology Stack](#technology-stack)
 
 ---
 
-## Architecture Overview
+## ✨ Key Features
+
+### 🤖 Multi-Agent Architecture (LangGraph)
+- **11 Specialized Agents** working together in a coordinated workflow
+- **Autonomous Decision Making** - No hard-coded routing rules
+- **Dynamic Replanning** - System can retry with different strategies if answer quality is insufficient
+
+### 🧠 Intelligent Query Processing
+- **Clarification System**: Detects ambiguous queries and asks follow-up questions
+- **Query Refinement**: Expands vague queries using chat history context
+- **SmallTalk Handling**: Recognizes and responds to casual conversation
+
+### 🔍 Hybrid Retrieval
+- **RAG (Retrieval-Augmented Generation)**: Semantic search over PDF documents
+- **Web Search Integration**: Real-time information via Tavily API
+- **Parallel Execution**: Can query both RAG and web simultaneously
+
+### 💬 Session-Based Memory
+- **Chat History**: Maintains conversation context across multiple queries
+- **PostgreSQL Storage**: Persistent storage for chat sessions
+- **Clear History API**: Endpoint to reset conversation state
+
+### 📊 Dual-Mode Evaluation
+- **Production Mode**: Fast quantitative metrics (~80% cost reduction)
+- **Full Mode**: Comprehensive LLM-based quality checks (faithfulness, consistency, relevance)
+- **Background Processing**: Non-blocking evaluation doesn't delay user responses
+
+### 🏗️ Production-Ready Design
+- **Docker Compose**: One-command deployment
+- **Auto-Ingestion**: Automatically processes PDFs on startup
+- **Error Handling**: Graceful degradation with detailed logging
+- **RESTful API**: FastAPI with interactive Swagger docs
+- **Modular Architecture**: Factory patterns, singleton caching, separation of concerns
+
+---
+
+## 🏛️ Architecture Overview
 
 ### System Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           User Request                               │
-└────────────────────────────────┬────────────────────────────────────┘
-                                 │
-                                 ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      FastAPI REST API Layer                          │
-│                    (POST /api/v1/llm)                                │
-└────────────────────────────────┬────────────────────────────────────┘
-                                 │
-                                 ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      LangGraph Workflow                              │
-│                                                                       │
-│  ┌──────────────┐           ┌──────────────────┐                   │
-│  │InitRouter    │──ambiguous──►Clarification   │                   │
-│  │Agent         │           │  Agent           │                   │
-│  └──────┬───────┘           └────┬──────┬──────┘                   │
-│         │                        │      │                           │
-│    clear_question            smalltalk │                           │
-│         │                        │   needs_more                     │
-│         │                        ▼      ▼                           │
-│         │                   ┌────────────────┐                      │
-│         │                   │SmallTalk/More  │                      │
-│         │                   │Detail Agents   │──► END               │
-│         │                   └────────────────┘                      │
-│         │                        │                                  │
-│         │                   process_query                           │
-│         │                        │                                  │
-│         ▼                        ▼                                  │
-│    ┌─────────────────────────────────┐                             │
-│    │    Refined Query Agent          │                             │
-│    └───────────────┬─────────────────┘                             │
-│                    │                                                │
-│                    ▼                                                │
-│    ┌─────────────────────────────────┐                             │
-│    │       Planner Agent             │                             │
-│    │  (Autonomous Tool Selection)    │                             │
-│    └───────────────┬─────────────────┘                             │
-│                    │                                                │
-│              selected_tool                                          │
-│                    │                                                │
-│         ┌──────────┴──────────┐                                    │
-│         │                     │                                    │
-│    rag_search           web_search                                 │
-│         │                     │                                    │
-│         ▼                     ▼                                    │
-│    ┌─────────────────────────────────┐                             │
-│    │       Tool Executor             │                             │
-│    │  (Parallel Query Execution)     │                             │
-│    └───────────────┬─────────────────┘                             │
-│                    │                                                │
-│              search_results                                         │
-│                    │                                                │
-│                    ▼                                                │
-│    ┌─────────────────────────────────┐                             │
-│    │    Synthesizer Agent            │                             │
-│    │  (Generate Final Response)      │                             │
-│    └───────────────┬─────────────────┘                             │
-│                    │                                                │
-│                    ▼                                                │
-│    ┌─────────────────────────────────┐                             │
-│    │    Reflection Agent             │                             │
-│    │  (Quality Check & Retry Logic)  │                             │
-│    └───────────────┬─────────────────┘                             │
-│                    │                                                │
-│         ┌──────────┴──────────┐                                    │
-│    sufficient          insufficient                                │
-│         │                     │                                    │
-│         ▼                     │                                    │
-│       END            (retry loop back to Planner)                  │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-                                 │
-                    (Background Async Process)
-                                 │
-                                 ▼
-                 ┌────────────────────────────────┐
-                 │   Evaluation Agent             │
-                 │  (Dual-Mode: Production/Full)  │
-                 └────────────────────────────────┘
-                                 │
-                                 ▼
-                 ┌────────────────────────────────┐
-                 │   PostgreSQL Database          │
-                 │  (Evaluation Metrics Storage)  │
-                 └────────────────────────────────┘
-```
-
-### Data Flow Architecture
-
-```
-┌──────────────┐       ┌──────────────┐       ┌──────────────┐
-│   Vector DB  │       │  Web Search  │       │ Chat History │
-│   (Chroma/   │       │   (Tavily)   │       │ (PostgreSQL) │
-│  Pinecone)   │       │              │       │              │
-└──────┬───────┘       └──────┬───────┘       └──────┬───────┘
-       │                      │                       │
-       │ retrieval            │ search                │ context
-       │                      │                       │
-       ▼                      ▼                       ▼
-┌─────────────────────────────────────────────────────────┐
-│              Workflow State (TypedDict)                  │
-│  - user_query, session_id                               │
-│  - selected_tool, generated_queries                     │
-│  - web_search_results, retrieved_documents              │
-│  - response, is_answer_sufficient                       │
-│  - orchestration_attempts, orchestration_history        │
-└─────────────────────────────────────────────────────────┘
-```
+![System Architecture](./workflow_diagram.png)
 
 ### Key Design Patterns
 
@@ -311,16 +239,16 @@ An advanced multi-agent Retrieval Augmented Generation (RAG) system built with L
 
 ---
 
-## How to Run Locally
+## 🚀 How to Run Locally
 
 ### Prerequisites
 
-- Docker and Docker Compose installed
-- OpenAI API key (required)
-- Tavily API key (optional, for web search)
-- Pinecone API key (optional, for vector DB)
+- **Docker** and **Docker Compose** installed
+- **OpenAI API Key** (required) - Get from [OpenAI Platform](https://platform.openai.com/api-keys)
+- **Tavily API Key** (optional, for web search) - Get from [Tavily](https://app.tavily.com/)
+- At least **4GB** of available RAM (for Docker containers)
 
-### Setup Steps
+### Quick Start (5 minutes)
 
 1. **Clone the repository**
    ```bash
@@ -329,58 +257,186 @@ An advanced multi-agent Retrieval Augmented Generation (RAG) system built with L
    ```
 
 2. **Create `.env` file**
+   
+   Create a `.env` file in the project root with your configuration:
+   
    ```bash
-   cp .env.example .env
+   touch .env
    ```
 
-3. **Configure environment variables** (edit `.env`)
+   Add the following content (copy-paste ready):
+   
    ```env
-   # Required
-   OPENAI_API_KEY=sk-...
-
-   # Optional (for web search)
-   TAVILY_API_KEY=tvly-...
-
-   # Optional (for Pinecone vector DB)
-   PINECONE_API_KEY=...
-   PINECONE_ENV=us-east-1-aws
-
-   # Database (default values work with docker-compose)
+   # ===================================
+   # ArcFusion Configuration
+   # ===================================
+   
+   # ===== REQUIRED =====
+   # OpenAI API Key - Get from: https://platform.openai.com/api-keys
+   OPENAI_API_KEY=sk-proj-...your-key-here...
+   
+   # ===== OPTIONAL (Web Search) =====
+   # Tavily API Key - Get from: https://app.tavily.com/
+   # Required only if you want to use web search functionality
+   TAVILY_API_KEY=tvly-...your-key-here...
+   
+   # ===== DATABASE CONFIGURATION =====
+   # PostgreSQL settings for chat history and evaluation metrics
+   # Use these defaults for Docker Compose (no changes needed)
    POSTGRES_USER=arcfusion
    POSTGRES_PASSWORD=arcfusion_dev_password
    POSTGRES_DB=arcfusion
    POSTGRES_HOST=postgres
    POSTGRES_PORT=5432
 
-   # Vector DB provider (chroma or pinecone)
+   # ===== VECTOR DATABASE =====
+   # Vector DB Provider: "chroma" (local) or "pinecone" (cloud)
    VECTOR_DB=chroma
+   VECTOR_DB_PERSIST_DIR=./.chroma
+   
+   # Pinecone (Cloud Vector DB) - Optional Alternative
+   # Uncomment and fill if using Pinecone instead of Chroma:
+   # PINECONE_API_KEY=your-pinecone-api-key
+   # PINECONE_ENV=us-east-1-aws
+   
+   # ===== LANGSMITH TRACING (OPTIONAL) =====
+   # LangSmith for workflow debugging and tracing
+   # Get API key from: https://smith.langchain.com/
+   # LANGCHAIN_API_KEY=your-langsmith-key
+   
+   # ===== ENVIRONMENT =====
+   ENV=dev
+   ```
+   
+   **Minimum Required Config** (for quick testing):
+   ```env
+   OPENAI_API_KEY=your-key-here
+   POSTGRES_USER=arcfusion
+   POSTGRES_PASSWORD=arcfusion_dev_password
+   POSTGRES_DB=arcfusion
+   POSTGRES_HOST=postgres
+   POSTGRES_PORT=5432
+   VECTOR_DB=chroma
+   ENV=dev
    ```
 
-4. **Build and start services**
+3. **Build and start services**
    ```bash
    docker-compose up --build
    ```
 
-5. **Wait for initialization**
-   - PostgreSQL health check: ~10-15 seconds
-   - Auto-ingestion of documents: ~30 seconds (if enabled)
-   - Server ready when you see: `Listening at: http://0.0.0.0:8000`
+   Or using the Makefile:
+   ```bash
+   make build
+   make run
+   ```
 
-6. **Access the API**
-   - API Base URL: http://localhost:8000
-   - Interactive Docs: http://localhost:8000/api/v1/docs
-   - OpenAPI Spec: http://localhost:8000/api/v1/openapi.json
+4. **Wait for initialization** (~30-60 seconds)
+   
+   You'll see the following stages:
+   - ✅ PostgreSQL health check passes (~10 seconds)
+   - ✅ Database tables created
+   - ✅ Auto-ingestion of documents from `/documents` folder (~30-40 seconds)
+   - ✅ Server ready: `Listening at: http://0.0.0.0:8000`
+   
+   Example logs:
+   ```
+   arcfusion-postgres | PostgreSQL init process complete
+   arc-fusion-server  | Database tables created successfully
+   arc-fusion-server  | Auto-ingestion completed: 4 files processed
+   arc-fusion-server  | [INFO] Listening at: http://0.0.0.0:8000 (worker count: 4)
+   ```
 
-### Example API Request
-
+5. **Test the API**
+   
+   Open your browser to:
+   - 📚 **Interactive Docs**: http://localhost:8000/api/v1/docs
+   - 📖 **OpenAPI Spec**: http://localhost:8000/api/v1/openapi.json
+   
+   Or use curl:
 ```bash
 curl -X POST "http://localhost:8000/api/v1/llm/" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "What is the execution accuracy for the Davinci Codex model on the Spider dataset?",
-    "session_id": "test-session-123"
+       "user_input": "What is the execution accuracy for Davinci Codex on Spider?"
   }'
 ```
+
+### Makefile Commands
+
+The project includes a Makefile for convenience:
+
+```bash
+make run          # Start all services (docker-compose up)
+make down         # Stop all services
+make build        # Build Docker images
+make rebuild      # Clean rebuild (removes all images and volumes)
+make restart      # Restart services
+make ps           # Show running containers
+make clean        # Remove all containers, images, and volumes
+```
+
+---
+
+### Troubleshooting
+
+#### Issue: PostgreSQL Connection Error
+**Solution**: Wait for health check to pass. You'll see:
+```
+arcfusion-postgres | ready to accept connections
+```
+
+#### Issue: "Auto-ingestion failed"
+**Causes**:
+- No PDF files in `documents/` folder
+- Invalid OpenAI API key (embeddings fail)
+
+**Solution**: 
+1. Add PDFs to `documents/` folder
+2. Verify `OPENAI_API_KEY` in `.env`
+3. Check logs: `docker logs arc-fusion-server-1`
+
+#### Issue: Web Search Not Working
+**Cause**: Missing Tavily API key
+
+**Solution**: 
+- Get key from https://app.tavily.com/
+- Add to `.env`: `TAVILY_API_KEY=tvly-...`
+- Restart: `make restart`
+- Note: System will still work with RAG-only queries
+
+#### Issue: Chroma Permission Errors
+**Solution**:
+```bash
+sudo chown -R $USER:$USER ./.chroma
+docker-compose restart
+```
+
+#### Issue: Port 8000 Already in Use
+**Solution**:
+```bash
+# Find process using port 8000
+lsof -ti:8000 | xargs kill -9
+
+# Or change port in docker-compose.yaml
+ports:
+  - "8001:8000"  # Change left side only
+```
+
+#### Viewing Logs
+```bash
+# All services
+docker-compose logs -f
+
+# Specific service
+docker logs -f arc-fusion-server-1
+docker logs -f arcfusion-postgres
+
+# Last 50 lines
+docker logs --tail 50 arc-fusion-server-1
+```
+
+---
 
 ### Project Structure
 
@@ -431,51 +487,69 @@ ArcFusion-Assignment/
 docker-compose down
 ```
 
-To also remove volumes (database data):
+To also remove volumes (database data and ChromaDB):
 ```bash
 docker-compose down -v
 ```
 
 ---
 
-## API Documentation
+## 📡 API Documentation
 
-### Main Endpoint
+### 1. Main Query Endpoint
 
 **POST** `/api/v1/llm/`
+
+Send a question to the multi-agent system for processing.
 
 **Request Body**:
 ```json
 {
-  "query": "string",           // Required: User query
-  "session_id": "string"       // Required: Session identifier for chat history
+  "user_input": "string"  // Required: User query (can be any natural language question)
 }
 ```
 
-**Response**:
+**Example Request**:
+```bash
+curl -X POST "http://localhost:8000/api/v1/llm/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_input": "Which prompt template gave the highest zero-shot accuracy on Spider in Zhang et al. (2024)?"
+  }'
+```
+
+**Response** (200 OK):
 ```json
 {
-  "response": "string",                    // Final generated response
-  "session_id": "string",                  // Session identifier
-  "selected_tool": "rag_search|web_search|none",
-  "generated_queries": [                   // Queries executed by ToolExecutor
-    {
-      "query": "string",
-      "purpose": "string"
-    }
-  ],
-  "orchestration_attempts": 0,             // Number of retry attempts
-  "is_answer_sufficient": true,            // Reflection result
-  "routing_decision": "clear_question|ambiguous",
-  "user_query": "string"                   // Final query (may be refined)
+  "response": "Based on Zhang et al. (2024), the SimpleDDL-MD-Chat prompt template achieved the highest zero-shot accuracy on Spider, with execution accuracy ranging from 65% to 72% across different models..."
 }
 ```
 
-### Health Check
+**Response Fields**:
+- `response` (string): The final generated answer from the system
 
-**GET** `/health`
+**Error Response** (500):
+```json
+{
+  "error_code": "INTERNAL_ERROR",
+  "description": "[ExceptionType]: Error message"
+}
+```
 
-**Response**:
+---
+
+### 2. Health Check
+
+**GET** `/api/v1/llm/health-check`
+
+Check if the service is running and healthy.
+
+**Example Request**:
+```bash
+curl -X GET "http://localhost:8000/api/v1/llm/health-check"
+```
+
+**Response** (200 OK):
 ```json
 {
   "status": "healthy"
@@ -484,7 +558,260 @@ docker-compose down -v
 
 ---
 
-## Future Improvements
+### 3. Clear Chat History
+
+**POST** `/api/v1/llm/clear-history`
+
+Clear all stored chat history across all sessions.
+
+**Example Request**:
+```bash
+curl -X POST "http://localhost:8000/api/v1/llm/clear-history"
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Chat history cleared successfully"
+}
+```
+
+---
+
+### Using Interactive API Docs
+
+Visit http://localhost:8000/api/v1/docs for Swagger UI where you can:
+- Test all endpoints interactively
+- View detailed request/response schemas
+- Generate API client code
+
+---
+
+## 🧪 Sample Test Scenarios
+
+This section demonstrates how the system handles the real-world scenarios from the assignment requirements.
+
+### Scenario 1: PDF-Only Queries
+
+**Test Case 1.1: Specific Technical Question**
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/llm/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_input": "Which prompt template gave the highest zero-shot accuracy on Spider in Zhang et al. (2024)?"
+  }'
+```
+
+**Expected Behavior**:
+- ✅ InitRouter: Detects clear technical question → Routes to Planner
+- ✅ Planner: Selects `rag_search` (document-specific query)
+- ✅ RAG: Retrieves chunks from Zhang et al. (2024) paper
+- ✅ Synthesizer: Generates answer citing SimpleDDL-MD-Chat (65-72% accuracy)
+
+---
+
+**Test Case 1.2: Specific Model Performance Query**
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/llm/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_input": "What execution accuracy does davinci-codex reach on Spider with the Create Table + Select 3 prompt?"
+  }'
+```
+
+**Expected Behavior**:
+- ✅ Routes to RAG retrieval (specific to provided papers)
+- ✅ Returns: Davinci-codex achieves 67% execution accuracy on Spider dev set with that prompt style
+
+---
+
+### Scenario 2: Ambiguous Questions (Clarification)
+
+**Test Case 2.1: Vague Query Without Context**
+
+```bash
+# First query (ambiguous)
+curl -X POST "http://localhost:8000/api/v1/llm/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_input": "Tell me more about it"
+  }'
+```
+
+**Expected Behavior**:
+- ✅ InitRouter: Detects ambiguity → Routes to Clarification
+- ✅ ClarificationAgent: No chat history, "it" is undefined → Routes to NeedsMoreDetail
+- ✅ System asks: "Could you please clarify what you'd like to know more about?"
+
+---
+
+**Test Case 2.2: Vague Query with Missing Details**
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/llm/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_input": "How many examples are enough for good accuracy"
+  }'
+```
+
+**Expected Behavior**:
+- ✅ Clarification detects missing context (which dataset? which accuracy target?)
+- ✅ System asks: "To provide an accurate answer, could you specify: Which dataset are you referring to, and what accuracy threshold do you consider 'good'?"
+
+---
+
+**Test Case 2.3: Small Talk**
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/llm/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_input": "Hello!"
+  }'
+```
+
+**Expected Behavior**:
+- ✅ ClarificationAgent detects smalltalk → Routes to SmallTalk
+- ✅ Friendly response without RAG retrieval
+
+---
+
+### Scenario 3: Autonomous Multi-Step Reasoning
+
+**Test Case 3.1: Complex Query Requiring Multiple Tools**
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/llm/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_input": "What is the state-of-the-art text-to-sql approach, and search on the web to tell me more about the authors who contributed to the approach"
+  }'
+```
+
+**Expected Behavior**:
+- ✅ **Step 1 (RAG)**: Planner selects `rag_search` to find state-of-the-art approach from PDFs
+  - Retrieves: "DIN-SQL" or similar SOTA method
+  - Identifies authors
+- ✅ **Step 2 (Web)**: MetaAssessorAgent detects insufficient info about authors
+  - Planner replans → Selects `web_search` with generated queries about authors
+  - WebSearch retrieves biographical info
+- ✅ **Step 3 (Synthesis)**: Combines PDF + Web results into comprehensive answer
+
+**Workflow**:
+```
+User Query → Planner (RAG) → Synthesizer → MetaAssessor (insufficient)
+    ↓
+Replan → Planner (Web) → Synthesizer → MetaAssessor (sufficient) → END
+```
+
+---
+
+### Scenario 4: Out-of-Scope Queries (Web Search)
+
+**Test Case 4.1: Current Events Query**
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/llm/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_input": "What did OpenAI release this month?"
+  }'
+```
+
+**Expected Behavior**:
+- ✅ Planner detects current/real-time query → Selects `web_search`
+- ✅ Tavily searches for recent OpenAI releases
+- ✅ Returns latest news (e.g., "OpenAI released GPT-4.5...")
+
+---
+
+**Test Case 4.2: Explicit Web Search Request**
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/llm/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_input": "Search online for the latest text-to-SQL benchmarks in 2025"
+  }'
+```
+
+**Expected Behavior**:
+- ✅ Planner detects "search online" intent → Selects `web_search`
+- ✅ Retrieves latest benchmark results from web
+
+---
+
+### Scenario 5: Hybrid Retrieval (RAG + Web)
+
+**Test Case 5.1: Question Requiring Both Sources**
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/llm/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_input": "Compare the Spider benchmark accuracy from Zhang et al. with the latest industry results"
+  }'
+```
+
+**Expected Behavior**:
+- ✅ Planner selects `hybrid_search` (both RAG and Web needed)
+- ✅ HybridRetrievalAgent runs parallel queries:
+  - RAG: Zhang et al. Spider accuracy
+  - Web: Latest industry Spider results
+- ✅ Synthesizer combines both sources
+
+---
+
+### Scenario 6: Follow-Up Questions (Chat History)
+
+```bash
+# First query
+curl -X POST "http://localhost:8000/api/v1/llm/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_input": "What is the Spider dataset?"
+  }'
+
+# Follow-up query (with session-based memory)
+curl -X POST "http://localhost:8000/api/v1/llm/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_input": "What accuracy did GPT-4 achieve on it?"
+  }'
+```
+
+**Expected Behavior**:
+- ✅ First query: Returns definition of Spider dataset
+- ✅ Follow-up: ClarificationAgent uses chat history to resolve "it" → Spider
+- ✅ RefinedQueryAgent expands to "What accuracy did GPT-4 achieve on Spider?"
+- ✅ RAG retrieves and returns accuracy
+
+---
+
+### Testing Tips
+
+1. **Use the Interactive Docs** (http://localhost:8000/api/v1/docs) to test queries with a GUI
+
+2. **Check Logs** for workflow decisions:
+   ```bash
+   docker logs -f arc-fusion-server-1
+   ```
+   
+   Look for:
+   - `InitRouter decision: clear_question | ambiguous`
+   - `Planner: selected_tool=rag_search | web_search | hybrid_search`
+   - `MetaAssessor: is_done=True | False (with replanning)`
+
+3. **Test Clarification** by intentionally using vague pronouns without context
+
+4. **Test Replanning** by asking complex multi-part questions
+
+---
+
+## 🔮 Future Improvements
 
 ### 1. **Performance Optimizations**
 
@@ -631,28 +958,141 @@ docker-compose down -v
 
 ---
 
-## Technology Stack
+## 🛠️ Technology Stack
 
-**Core Framework**: LangGraph (for multi-agent orchestration)
-**API Framework**: FastAPI
-**LLM Providers**: OpenAI (GPT-4o-mini, GPT-3.5-turbo)
-**Vector Databases**: Chroma (default), Pinecone
-**Embeddings**: OpenAI text-embedding-3-small
-**Web Search**: Tavily
-**Database**: PostgreSQL (chat history, evaluation metrics)
-**Chunking**: LlamaIndex SemanticSplitterNodeParser
-**Document Processing**: Unstructured.io
-**Logging**: Custom logger with coloredlogs
-**Deployment**: Docker, Docker Compose, Gunicorn
+### Core Frameworks
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Orchestration** | LangGraph | Multi-agent workflow coordination |
+| **API Server** | FastAPI | RESTful API with async support |
+| **LLM Provider** | OpenAI | GPT-4o-mini, GPT-3.5-turbo |
+| **Deployment** | Docker Compose | Containerized services |
+
+### Data & Storage
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Vector DB** | Chroma (default) | Local vector storage for embeddings |
+| **Alternative** | Pinecone | Cloud-based vector database |
+| **SQL Database** | PostgreSQL 15 | Chat history, evaluation metrics |
+| **Embeddings** | text-embedding-3-small | 1536-dim vectors |
+
+### Document Processing
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Ingestion** | Unstructured.io | PDF parsing and extraction |
+| **Chunking** | LlamaIndex SemanticSplitter | Semantic document segmentation |
+| **Retrieval** | Vector search | Top-K similarity search |
+
+### External APIs
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Web Search** | Tavily API | Real-time web information |
+| **Tracing** | LangSmith (optional) | Workflow debugging |
+
+### Production Infrastructure
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **WSGI Server** | Gunicorn | Production-grade Python server |
+| **Logging** | coloredlogs | Structured logging |
+| **Environment** | Micromamba | Fast conda alternative |
 
 ---
 
-## License
+## 📋 Assignment Requirements Checklist
 
-This project is submitted as part of the ArcFusion assignment.
+This project fulfills all assignment requirements:
+
+### ✅ Core Functionality
+- [x] **Answer questions grounded in PDF documents** (RAG with semantic chunking)
+- [x] **Handle follow-up questions** (Session-based PostgreSQL chat history)
+- [x] **Autonomous decision making** (Planner selects tools dynamically, no hard-coded routing)
+- [x] **Web search integration** (Tavily API for current events and external knowledge)
+- [x] **RESTful API endpoints** (FastAPI with Swagger docs)
+  - [x] Ask questions (`POST /api/v1/llm/`)
+  - [x] Clear memory (`POST /api/v1/llm/clear-history`)
+
+### ✅ Technical Requirements
+- [x] **Python** implementation
+- [x] **FastAPI** application server
+- [x] **LangGraph** multi-agent architecture (11 agents)
+- [x] **RAG implementation** (vector search + LLM synthesis)
+- [x] **PDF ingestion script** (Auto-ingestion on startup)
+- [x] **Docker & docker-compose** (One-command deployment)
+
+### ✅ Bonus Features
+- [x] **Clarification Agent** (Detects vague queries, asks follow-ups)
+- [x] **Evaluation System** (Dual-mode: production/full with confidence scoring)
+- [x] **Autonomous Agent** (PlannerAgent + MetaAssessorAgent with replanning)
+
+### ✅ Real-World Scenarios Handled
+1. [x] **Ambiguous Questions** ("Tell me more about it" → Asks for clarification)
+2. [x] **PDF-Only Queries** ("Which prompt template gave highest accuracy?" → RAG search)
+3. [x] **Autonomous Capability** ("What's SOTA and search authors" → Multi-step with replanning)
+4. [x] **Out-of-Scope Queries** ("What did OpenAI release?" → Web search)
+
+### ✅ Code Quality
+- [x] **Modular design** (Factory patterns, base classes, separation of concerns)
+- [x] **No unused code** (Clean, focused implementation)
+- [x] **Good logging** (Detailed logs for debugging)
+- [x] **Production-ready** (Error handling, health checks, graceful degradation)
 
 ---
 
-## Contact
+## 🎯 Design Decisions & Trade-offs
+
+### Why 11 Agents?
+- **Separation of Concerns**: Each agent has one clear responsibility
+- **Composability**: Easy to add/remove agents without breaking the workflow
+- **Testability**: Individual agents can be tested in isolation
+
+### Why Dual-Mode Evaluation?
+- **Cost Optimization**: Production mode reduces LLM calls by 80%
+- **Flexibility**: Full mode for debugging/quality assurance
+- **Non-Blocking**: Background processing doesn't delay user responses
+
+### Why PostgreSQL for Chat History?
+- **ACID Compliance**: Reliable storage for production
+- **Scalability**: Can handle millions of sessions
+- **Rich Queries**: SQL enables analytics (e.g., most common queries)
+
+### Why Chroma as Default Vector DB?
+- **Zero Setup**: Works out-of-the-box with Docker
+- **Local-First**: No external dependencies for testing
+- **Easy Switch**: Can change to Pinecone via env variable
+
+### Why LangGraph Over Sequential Chains?
+- **Dynamic Routing**: Agents decide next steps based on state
+- **Retry Logic**: MetaAssessor can trigger replanning
+- **State Management**: TypedDict state passed between agents
+
+---
+
+## 📚 Documentation
+
+- **README** (this file): Architecture, setup, usage
+- **Interactive API Docs**: http://localhost:8000/api/v1/docs
+- **Code Comments**: Inline documentation in all modules
+- **Type Hints**: Python 3.10+ type annotations throughout
+
+---
+
+## 📝 License
+
+This project is submitted as part of the **ArcFusion Technical Assignment**.
+
+---
+
+## 👤 Contact
 
 For questions or issues, please contact the project maintainer.
+
+---
+
+## 🙏 Acknowledgments
+
+Built with:
+- LangChain/LangGraph for agent orchestration
+- OpenAI for LLM capabilities
+- Tavily for web search
+- Unstructured.io for document processing
+- FastAPI for API framework
