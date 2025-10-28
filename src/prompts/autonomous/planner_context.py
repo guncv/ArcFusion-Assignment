@@ -1,100 +1,108 @@
 INITIAL_PLANNING_TEMPLATE = """
-   PLANNING REQUEST (Autonomous Tool Selection)
+  PLANNING REQUEST (Autonomous Initial Planning)
 
-   User Query: {user_query}
+  User Query: {user_query}
 
-   SITUATION:
-      - You are an autonomous planner that decides which tools to use
-      - You have access to BOTH internal documents (RAG) and external web search
-      - Analyze the query and decide the BEST strategy
+  ## Your Role
+  You are an autonomous planner deciding which tool to use and what query to execute.
 
-   YOUR AVAILABLE TOOLS:
+  ## Available Tools
 
-   1. **rag_search** - Search internal knowledge base/documents
-      - Use for: Policies, procedures, internal documentation, company info
-      - Examples: "What's our refund policy?", "How does our system work?", "Company guidelines"
-      - Strengths: Accurate, authoritative for internal information
-      - Limitations: No real-time data, no external/current information
+  **rag_search** - Search internal PDF documents/knowledge base
+  - Use for: Research papers, technical documentation, established knowledge
+  - Contains: Text-to-SQL research papers (Zhang et al. 2024, etc.), methodologies, benchmark results
+  - Strengths: Accurate, authoritative, comprehensive technical details
 
-   2. **web_search** - Search the web for current information
-      - Use for: Real-time data, current events, external information, latest news
-      - Examples: "Who is the richest person now?", "Latest AI news", "Current Bitcoin price"
-      - Strengths: Up-to-date, broad coverage, external sources
-      - Limitations: No access to internal documents
+  **web_search** - Search the web for current/external information
+  - Use for: Real-time data, current events, author information, latest news
+  - Examples: "Who is the richest person now?", "Latest AI developments", "What did OpenAI release this month?"
+  - Strengths: Up-to-date, external sources, biographical data
 
-   3. **none** - No search needed
-      - Use only if the question truly cannot be answered with available tools
+  **hybrid_search** - Search BOTH internal PDFs AND web in parallel
+  - Use when: Query needs both internal knowledge + external context
+  - Examples: "What's SOTA? Tell me about authors", "Explain X and find recent applications"
+  - Strengths: One-step parallel retrieval, most efficient for multi-part queries
 
-   DECISION-MAKING GUIDELINES:
+  ## Decision Strategy
 
-   **When to use rag_search:**
-      - Questions about internal policies, procedures, documentation
-      - Company-specific information
-      - Technical documentation
-      - Established knowledge that doesn't change frequently
+  **Priority:**
+  1. **hybrid_search** - Multi-part queries needing both internal + external
+  2. **rag_search** (DEFAULT) - Research questions, technical queries
+  3. **web_search** - Real-time data OR external-only info
 
-   **When to use web_search:**
-      - "Current", "latest", "now", "today" in query
-      - Real-time data (prices, rankings, news)
-      - External information not in internal docs
-      - Recent events or developments
+  **Examples:**
+  - "What's the SOTA text-to-SQL approach?" → rag_search (research question)
+  - "Which template gave highest accuracy on Spider?" → rag_search (in papers)
+  - "What did OpenAI release this month?" → web_search (real-time)
+  - "Who is the richest person now?" → web_search (real-time rankings)
+  - "What's SOTA approach? Tell me about authors" → hybrid_search (needs both)
 
-   **Strategy Selection:**
-      - Choose ONE tool that best fits the query
-      - Generate 1-3 diverse queries for that tool
-      - Each query should target different aspects (NOT repetitive variations)
+  ## Your Task
 
-   YOUR TASK:
-      1. Analyze the query type and information needed
-      2. Decide which tool is BEST suited
-      3. Generate 1-3 DIVERSE search queries
-      4. Each query should approach the problem from a DIFFERENT angle
+  1. Analyze the query type
+  2. Choose the appropriate tool (default: rag_search)
+  3. Generate ONE focused search query
 
-   REMEMBER: You are AUTONOMOUS - decide based on the query, not hard-coded rules!
+  **Remember:** Be autonomous - think about what information source would have the answer!
 """
 
 REPLANNING_CONTEXT_TEMPLATE = """
-   REPLANNING REQUEST (Previous attempt was insufficient - Autonomous Replanning)
+  REPLANNING REQUEST (Autonomous Rethinking - Attempt #{attempt_number})
 
-   User Query: {user_query}
+  User Query: {user_query}
 
-   PREVIOUS ATTEMPT:
-   - Tool used: {previous_tool}
-   - Previous response: {old_response}
-   - Previous queries: {old_queries}
+  ## Previous Attempt Analysis
 
-   REFLECTION FEEDBACK (What's missing):
-      {reflection_comment}
+  - **Tool Used:** {previous_tool}
+  - **Current Response:** {current_response}
 
-   YOUR AVAILABLE TOOLS (Choose the BEST one for replanning):
+  ## Reflection Feedback
+  {reflection_comment}
 
-      1. **rag_search** - Search internal knowledge base/documents
-      2. **web_search** - Search the web for current information
-      3. **none** - Give up (only if truly impossible)
+  ## Available Tools
+  **rag_search** - Search internal PDF documents
+  **web_search** - Search web for current/external info
+  **hybrid_search** - Search both RAG + Web in parallel
 
-   REPLANNING STRATEGIES:
+  ## Autonomous Rethinking Strategy
 
-   **Analyze the feedback:**
-      - What specific information is missing?
-      - Did the previous tool fail to find needed information?
-      - Would a DIFFERENT tool be better?
+  **Analyze the situation:**
 
-   **Tool Switching:**
-      - If previous tool was **rag_search** and feedback mentions "missing recent updates" or "needs current data" → Consider **web_search**
-      - If previous tool was **web_search** and feedback mentions "needs specific documentation" → Consider **rag_search** (if not tried yet)
-      - If same tool but different queries needed → Use same tool with BETTER queries
+  1. **If confidence < 0.6 (Low Confidence):**
+    - Retrieved info was irrelevant/insufficient
+    - Options:
+      * If used RAG → Try web_search (info might not be in PDFs)
+      * If used Web → Try different/more specific query
 
-    **Query Generation:**
-      - Generate 1-3 TARGETED queries that address the specific gaps in the feedback
-      - Make queries MORE SPECIFIC based on what's missing
-      - Each query should target a different aspect of the missing information
+  2. **If confidence >= 0.6 (Answer Incomplete):**
+    - Retrieved info was good, but answer missing details
+    - Read reflection feedback to identify what's missing
+    - Generate targeted query for missing information
+    - Usually needs web_search for additional context (author bios, recent updates, etc.)
 
-   YOUR TASK:
-      1. Analyze reflection feedback to identify gaps
-      2. Decide if same tool with better queries OR switch to different tool
-      3. Generate TARGETED search queries addressing the gaps
+  **Decision Process:**
 
-   REMEMBER: You're AUTONOMOUS - you can switch tools if the feedback suggests it!
-   Generate 1-3 TARGETED search queries that specifically address what the feedback says is missing.
-   Think: What specific information does the feedback say we need? What sources would have that information?
+  1. Read reflection feedback carefully
+  2. Identify WHAT specific information is missing
+  3. Decide if switching tools would help OR if better query needed
+  4. Generate ONE focused query addressing the gaps
+
+  ## Your Task
+
+  Autonomously decide:
+  1. Which tool to use (rag_search or web_search)
+  2. What specific query to execute
+
+  **Example Scenarios:**
+
+  - Reflection says "documents not relevant" + confidence=0.25 + used rag_search
+    → Switch to web_search with same/similar query
+
+  - Reflection says "missing author affiliations" + confidence=0.85 + used rag_search
+    → Use web_search to find "Zhang et al. 2024 authors affiliations institutions"
+
+  - Reflection says "need more recent data" + confidence=0.40 + used web_search
+    → Keep web_search but refine query with more specific keywords
+
+  **Remember:** You're AUTONOMOUS - think and rethink! What went wrong? How can you fix it?
 """

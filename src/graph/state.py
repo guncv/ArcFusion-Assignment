@@ -12,20 +12,18 @@ class RoutingDecision(Enum):
     NEEDS_MORE_DETAIL = "needs_more_detail"
     PROCESS_QUERY = "process_query"
 
-    # Intent Analysis Agent decisions
-    USE_RAG = "use_rag"  # Question can be answered from documents
-    USE_WEB_SEARCH = "use_web_search"  # Question needs real-time/web data
-
-    # RAG Reflection Agent decisions
-    RAG_SUFFICIENT = "rag_sufficient"
-    RAG_INSUFFICIENT = "rag_insufficient"
-    NOT_RELEVANT = "not_relevant"
-
 class ToolType(Enum):
     # Tool selection for planner
     RAG_SEARCH = "rag_search"  # Search internal documents/knowledge base
     WEB_SEARCH = "web_search"  # Search external web sources
-    NONE = "none"  # No search needed
+    HYBRID_SEARCH = "hybrid_search"  # Search both RAG and Web in parallel
+
+class ReflectionAction(Enum):
+    # Reflection Agent next action decisions
+    DONE = "done"  # Answer is complete, end workflow
+    SWITCH_TO_WEBSEARCH = "switch_to_websearch"  # RAG failed, switch to web
+    REPLAN_WITH_DIFFERENT_QUERY = "replan_with_different_query"  # Try different query (same tool)
+    ADD_WEB_DETAILS = "add_web_details"  # Add more information via web search
 
 class RetrievedDocument(TypedDict):
     document: Document
@@ -35,32 +33,23 @@ class WorkflowState(TypedDict, total=False):
     user_query: str
     session_id: str
     routing_decision: str
-    
-    # RAG-related fields
-    retrieved_documents_with_scores: List[RetrievedDocument]
-    
-    # RAG Synthesizer fields
-    rag_synthesizer_response: str = ""
-    
-    # RAG Reflection fields
-    rag_reflection_comment: str
 
     # Planning fields
     selected_tool: str  # Tool selected by planner: ToolType enum values
-    generated_queries: list
+    generated_queries: str  # Single query for rag_search or web_search
+    rag_query: str  # RAG-specific query for hybrid_search
+    web_query: str  # Web-specific query for hybrid_search
     web_search_results: list  # Only populated for web_search tasks
-
-    # Orchestration Reflection fields
-    is_answer_sufficient: bool = False
-    reflection_issues: str
-    orchestration_attempts: int = 0
-    old_queries: list  # Previous queries from previous orchestration attempts
-
-    # Feedback loop history tracking (for debugging and analysis)
-    orchestration_history: List[Dict[str, Any]]  # List of iteration attempts with details
+    
+    # RAG Retrieval fields
+    retrieved_documents_with_scores: List[RetrievedDocument]
+    
+    # Meta-Assessor fields
+    is_done: bool
+    comment: str
+    autonomous_attempts: int = 0
 
     # Response fields
-    current_synthesized_response: str  # Response from current iteration only (before merging with old)
     response: str  # Final merged response (current + old)
     error_message: Optional[str]
 

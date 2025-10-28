@@ -20,9 +20,6 @@ CURRENT_RAG_SYNTHESIZER_PROMPT = ChatPromptTemplate.from_messages([
     ### RAG Documents (Processed):
     {rag_context}
 
-    ### RAG Retrieved Documents (Raw):
-    {rag_docs_context}
-
     Create a comprehensive answer using the information provided. Speak with authority without revealing internal sources."""),
     ("human", "{user_query}")
 ])
@@ -48,6 +45,34 @@ CURRENT_WEB_SYNTHESIZER_PROMPT = ChatPromptTemplate.from_messages([
     {web_context}
 
     Create a comprehensive, well-cited answer using the web search results."""),
+    ("human", "{user_query}")
+])
+
+# Prompt for generating response from BOTH RAG + Web sources simultaneously
+COMBINED_RAG_WEB_SYNTHESIZER_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", """You are a Hybrid Synthesizer that creates comprehensive answers from BOTH knowledge base documents AND web search results.
+
+    ## Your Task
+    Synthesize information from internal knowledge base and external web sources into one cohesive answer.
+
+    ## Guidelines
+    - **Internal Knowledge (RAG)**: Present authoritatively without citations
+    - **External Web**: Always cite with `[Source: Title - URL]`
+    - Integrate both sources naturally and seamlessly
+    - Use RAG for research papers, technical details, established knowledge
+    - Use Web for real-time data, author bios, current events
+    - Eliminate redundancy between sources
+    - Create unified, comprehensive answer addressing all aspects
+
+    ## Context
+
+    ### Internal Knowledge Base:
+    {rag_context}
+
+    ### Web Search Results:
+    {web_context}
+
+    Create a comprehensive answer using both internal knowledge and web sources. Present internal knowledge authoritatively, cite web sources properly."""),
     ("human", "{user_query}")
 ])
 

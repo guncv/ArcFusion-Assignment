@@ -1,12 +1,6 @@
 from typing import List, Union, Any
 from langchain_core.documents import Document
 
-def format_rag_context(documents: str) -> str:
-    if not documents:
-        return "No relevant documents found in knowledge base."
-
-    return f"RAG Documents (Knowledge Base): {documents}\n"
-
 def format_web_context(documents: List[Document]) -> str:
     if not documents:
         return "No web search results available."
@@ -41,12 +35,9 @@ def format_rag_documents_context(
             doc = doc_item["document"]
             score = doc_item.get("score", 0.0)
             content = doc.page_content
-            metadata = doc.metadata
-            title = metadata.get("title", "Untitled")
 
             context_parts.append(
                 f"[RAG Document {i}] (Score: {score:.3f})\n"
-                f"Title: {title}\n"
                 f"Content: {content}\n"
             )
         else:
@@ -56,12 +47,12 @@ def format_rag_documents_context(
                 if hasattr(doc_item, "page_content")
                 else str(doc_item)
             )
-            metadata = doc_item.metadata if hasattr(doc_item, "metadata") else {}
-            title = metadata.get("title", "Untitled")
+            score = 0.0
+            if hasattr(doc_item, "metadata"):
+                score = doc_item.metadata.get("score", 0.0)
 
             context_parts.append(
-                f"[RAG Document {i}]\n"
-                f"Title: {title}\n"
+                f"[RAG Document {i}] (Score: {score:.3f})\n"
                 f"Content: {content}\n"
             )
 

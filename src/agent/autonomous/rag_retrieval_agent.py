@@ -6,49 +6,32 @@ from src.utils import ArcFusionException
 from src.constants import ArcFusionErrorCodes
 from src.infras.retrieval.factory import RetrieverFactory
 from src.agent.base import AgentInterface
-import asyncio
 
 class RAGRetrievalAgent(AgentInterface):
     def __init__(self):
         self.retriever = RetrieverFactory.get()
 
-    async def search(self, query_text: str, query_purpose: str) -> List[Document]:
-        try:
-            # Run the synchronous retrieval in a thread pool to avoid blocking the event loop
-            loop = asyncio.get_event_loop()
-            documents = await loop.run_in_executor(
-                None,
-                self.retriever.get_relevant_documents,
-                query_text
-            )
-
-            # Add query metadata to each document
-            for doc in documents:
-                doc.metadata["search_query"] = query_text
-                doc.metadata["query_purpose"] = query_purpose
-
-            return documents
-
-        except Exception as e:
-            raise ArcFusionException(
-                error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
-                description=f"RAGRetrievalAgent search error: [{type(e).__name__}]: {str(e)}",
-            )
-
     async def ainvoke(self, state: WorkflowState) -> WorkflowState:
         try:
-            query = state.get("user_query", "")
-            if not query:
+            # Get the query from generated_queries
+            generated_queries = state.get("generated_queries", "")
+
+            if not generated_queries:
+                # Fallback to user_query if no generated queries
+                query_text = state.get("user_query", "")
+            else:
+                # Use planner-generated query
+                query_text = generated_queries
+
+            if not query_text:
                 raise ValueError("No query found in state")
 
-            # Run the synchronous retrieval in a thread pool to avoid blocking the event loop
-            loop = asyncio.get_event_loop()
-            documents = await loop.run_in_executor(
-                None,
-                self.retriever.get_relevant_documents,
-                query
-            )
-            
+            from src.infras.log import logger
+            logger.info(f"RAGRetrievalAgent executing query: '{query_text}'")
+
+            # Direct synchronous call - since we're only doing a single RAG retrieval
+            documents = self.retriever.get_relevant_documents(query_text)
+
             retrieved_documents_with_scores = []
             for doc in documents:
                 score = doc.metadata.get("score", 0.0)
@@ -56,7 +39,9 @@ class RAGRetrievalAgent(AgentInterface):
                     document=doc,
                     score=score
                 ))
-                
+
+            logger.info(f"RAGRetrievalAgent retrieved: {retrieved_documents_with_scores}")
+
             return {
                 **state,
                 "retrieved_documents_with_scores": retrieved_documents_with_scores,
@@ -67,6 +52,3 @@ class RAGRetrievalAgent(AgentInterface):
                 error_code=ArcFusionErrorCodes.INTERNAL_ERROR,
                 description=f"{self.name} error: [{type(e).__name__}]: {str(e)}",
             )
-
-# Note: rag_retrieval_agent should be instantiated with proper arguments when needed
-# rag_retrieval_agent = RAGRetrievalAgent()

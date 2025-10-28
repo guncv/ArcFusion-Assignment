@@ -68,10 +68,7 @@ class ChromaVectorStoreProvider(BaseVectorStore):
 
                 doc = Document(
                     page_content=node.text if hasattr(node, 'text') else str(node),
-                    metadata={
-                        **node.metadata,
-                        "score": score,
-                    }
+                    metadata={"score": score}
                 )
                 documents.append(doc)
 

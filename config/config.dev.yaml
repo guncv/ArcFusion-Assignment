@@ -1,6 +1,3 @@
-workflow:
-  orchestration_max_attempts: 2
-
 init_router_agent:
   model: gpt-3.5-turbo
   api_provider: openai
@@ -49,6 +46,27 @@ planner_agent:
   temperature: 0.3
   api_key: ${OPENAI_API_KEY}
   max_tokens: 500
+
+meta_assessor_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 500
+
+rag_retrieval_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 200
+
+web_search_agent:
+  model: gpt-3.5-turbo
+  api_provider: openai
+  temperature: 0.0
+  api_key: ${OPENAI_API_KEY}
+  max_tokens: 200
 
 synthesizer_agent:
   model: gpt-3.5-turbo
