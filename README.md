@@ -149,9 +149,9 @@ The services will start:
 - **API Server**: http://localhost:8000
 - **PostgreSQL**: localhost:5432
 
-4. **Place documents for ingestion**
+4. **Wait server for ingestion**
 
-The system auto-ingests PDF documents from the `documents/` folder on startup. The repository includes sample research papers about Text-to-SQL.
+![Running](./running.png)
 
 5. **Test the API**
 
@@ -176,65 +176,34 @@ make clean
 
 ## 🔮 Future Improvements
 
-### 1. Advanced Retrieval Techniques
-- **Reranking**: Implement cross-encoder reranking for better retrieval accuracy
-- **Query Decomposition**: Break complex queries into sub-questions
-- **Contextual Compression**: Use LLM-based compression to extract only relevant passages
-- **Hypothetical Document Embeddings (HyDE)**: Generate hypothetical answers and use them for retrieval
+### 1. RAG System Optimization (High Priority)
+- **Optimize Chunking Strategy**: Currently using LlamaIndex SemanticSplitterNodeParser which may be overkill. Explore simpler, faster chunking methods (fixed-size with overlap, sentence-based) that reduce processing time and costs while maintaining quality
+- **Improve Ingestion Pipeline**: Reduce dependencies and complexity (currently using Unstructured.io with Java requirements). Consider lighter alternatives like PyPDF2 or pdfplumber for faster, cheaper processing
+- **Enhance Retrieval**: Experiment with different embedding models to find the best fit for research papers. Current approach may be too resource-intensive. Test models like `text-embedding-ada-002` vs `text-embedding-3-small` for cost-performance balance
+- **Performance vs Cost**: Current RAG implementation uses too much time and cost. Need to find the right balance between quality and efficiency for the Text-to-SQL research paper use case
 
-### 2. Multi-Modal Support
-- **Image Understanding**: Process diagrams, charts, and figures from PDFs
-- **Table Extraction**: Enhanced table parsing and querying
-- **Audio/Video**: Transcription and search over multimedia content
+### 2. Prompt Optimization (High Priority)
+- **Reduce Prompt Length**: Current prompts may be verbose. Refactor to be shorter while maintaining clarity and effectiveness
+- **Tailor to Agent Use Cases**: Each agent should have prompts optimized specifically for its role - remove generic instructions and focus on what matters
+- **Cost Reduction**: Shorter prompts = lower token usage = reduced LLM costs across all 12 agents
+- **Implement Prompt Templates**: Create concise, reusable templates that can be version-controlled and A/B tested
 
-### 3. Enhanced Memory & Personalization
-- **Long-term Memory**: Maintain user preferences and conversation history across sessions
-- **User Profiling**: Adapt responses based on user expertise level
-- **Conversation Summarization**: Compress long conversation histories for context
+### 3. Chat History & Performance (High Priority)
+- **Add Redis Caching**: Move chat history from PostgreSQL-only to hybrid Redis + PostgreSQL for faster retrieval
+- **Benefits**: Redis provides sub-millisecond access times for active conversations, PostgreSQL for long-term persistence
+- **Implementation**: Use Redis for hot data (recent sessions), PostgreSQL for cold data and analytics
+- **Reduce Database Load**: Lighten PostgreSQL workload by serving frequently accessed data from memory
 
 ### 4. Production-Ready Features
-- **Streaming Responses**: Implement SSE (Server-Sent Events) for real-time streaming
+- **Streaming Responses**: Implement SSE (Server-Sent Events) for real-time response streaming
 - **Rate Limiting**: Protect API endpoints with Redis-based rate limiting
-- **Caching Layer**: Cache frequent queries with Redis
 - **Authentication & Authorization**: User management with JWT tokens
-- **Monitoring Dashboard**: Grafana + Prometheus for system health
-- **A/B Testing**: Framework for testing different agent configurations
+- **Monitoring Dashboard**: Basic health metrics and performance tracking
 
-### 5. Scalability & Performance
-- **Horizontal Scaling**: Kubernetes deployment with load balancing
-- **Vector DB Optimization**: Migrate to Pinecone/Weaviate for large-scale production
-- **Async Batch Processing**: Queue-based processing for heavy workloads (Celery + RabbitMQ)
-- **CDN for Documents**: S3 + CloudFront for document storage
-
-### 6. Advanced Agent Capabilities
-- **Tool Use**: Allow agents to use external APIs (calculators, database queries, etc.)
-- **Multi-Agent Collaboration**: Specialized agents for different domains (finance, legal, technical)
-- **Confidence Calibration**: Fine-tune confidence thresholds based on domain
-- **Explainability**: Detailed reasoning chains and decision explanations
-
-### 7. Data Quality & Evaluation
-- **Automated Testing**: Unit tests for each agent + integration tests
-- **Evaluation Metrics**: Track precision, recall, F1 for retrieval quality
-- **Human Feedback Loop**: RLHF for continuous improvement
-- **Synthetic Data Generation**: Automated test query generation
-
-### 8. Document Management
-- **Incremental Indexing**: Update vector DB without full reindexing
-- **Document Versioning**: Track document changes over time
-- **Source Attribution**: Enhanced citation with page numbers and excerpts
-- **Multi-language Support**: Cross-lingual retrieval and generation
-
-### 9. Cost Optimization
-- **LLM Caching**: Semantic caching for similar queries
-- **Prompt Optimization**: Reduce token usage with compression
-- **Local LLM Options**: Support for Llama 3, Mistral for cost-sensitive deployments
-- **Smart Routing**: Use cheaper models for simple tasks, premium for complex ones
-
-### 10. User Experience
-- **Web UI**: React-based chat interface with rich media support
-- **Mobile App**: Native iOS/Android applications
-- **Voice Interface**: Speech-to-text and text-to-speech integration
-- **Collaborative Features**: Share conversations, annotations, bookmarks
+### 5. Cost & Performance Optimization
+- **LLM Response Caching**: Cache similar queries to avoid redundant API calls
+- **Smart Model Selection**: Use cheaper models for simple tasks, premium models for complex reasoning
+- **Reduce Agent Calls**: Optimize workflow to minimize unnecessary agent invocations
 
 ## 📦 Docker Files Included
 
