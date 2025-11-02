@@ -3,7 +3,6 @@ from src.config import config
 from src.infras.ingestion.base import BaseReader
 from src.infras.ingestion.providers.unstructured import UnstructuredReaderProvider
 
-
 class ReaderFactory:
     # Registry of available reader providers
     _providers = {
