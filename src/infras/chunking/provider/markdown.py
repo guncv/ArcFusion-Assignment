@@ -1,23 +1,14 @@
 from typing import List
-from llama_index.core.node_parser import SemanticSplitterNodeParser
+from llama_index.core.node_parser import MarkdownNodeParser
 from llama_index.core.schema import Document as LlamaDocument, TextNode
 from src.infras.chunking.base import BaseChunker
 from src.infras.embedding.base import BaseEmbedding
+from src.infras.log import logger as log
+class MarkdownChunker(BaseChunker):
 
-class SemanticNodeChunker(BaseChunker):
-    
-    def __init__(self,embedding_provider: BaseEmbedding):
+    def __init__(self, embedding_provider: BaseEmbedding):
         self._embedding_provider = embedding_provider
-        self._buffer_size = 1
-        self._breakpoint_percentile_threshold = 85
-
-        embed_model = embedding_provider.get_text_embedding_model()
-
-        self._chunker = SemanticSplitterNodeParser(
-            buffer_size=self._buffer_size,
-            breakpoint_percentile_threshold=self._breakpoint_percentile_threshold,
-            embed_model=embed_model
-        )
+        self._chunker = MarkdownNodeParser()
 
     def split_documents(self, documents: List[LlamaDocument]) -> List[TextNode]:
         all_nodes: List[TextNode] = []
@@ -29,18 +20,17 @@ class SemanticNodeChunker(BaseChunker):
                 for i, node in enumerate(nodes):
                     node.metadata["chunk_id"] = i
                     node.metadata["chunk_size"] = len(node.text)
-                    node.metadata["chunking_strategy"] = "semantic"
+                    node.metadata["chunking_strategy"] = "markdown"
                     all_nodes.append(node)
 
             except Exception as e:
-                # Fallback: create a single node with the entire document
                 fallback_node = TextNode(
                     text=doc.text,
                     metadata={
                         **doc.metadata,
                         "chunk_id": 0,
                         "chunk_size": len(doc.text),
-                        "chunking_strategy": "semantic",
+                        "chunking_strategy": "markdown_fallback",
                         "error": str(e)
                     }
                 )
@@ -57,5 +47,4 @@ class SemanticNodeChunker(BaseChunker):
 
     @property
     def name(self) -> str:
-        return "semantic_node"
-    
+        return "markdown"

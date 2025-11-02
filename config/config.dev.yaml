@@ -165,15 +165,17 @@ rag:
     on_startup: true
 
   ingestion:
-    provider: "unstructured"  # Document reader provider (only "unstructured" supported)
+    provider: "unstructured"
 
   embedding_model: "text-embedding-3-small"
   embedding_api_key: "${OPENAI_API_KEY}"
 
   chunking:
-    provider: "semantic_node"  # Options: "semantic_node" (LlamaIndex SemanticSplitterNodeParser)
-    llamaindex_buffer_size: 1  # Number of sentences to group together
-    llamaindex_breakpoint_threshold: 95  # Percentile threshold for semantic splits
+    provider: "recursive"  # Options: "semantic_node", "markdown", "recursive"
+    chunk_size: 1024  # Target size for each chunk (used by recursive)
+    chunk_overlap: 200  # Overlap between chunks for context preservation (used by recursive)
+    llamaindex_buffer_size: 1  # Number of sentences to group together (used by semantic_node)
+    llamaindex_breakpoint_threshold: 95  # Percentile threshold for semantic splits (used by semantic_node)
 
   retrieval:
     type: "vector"

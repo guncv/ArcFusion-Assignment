@@ -3,11 +3,15 @@ from functools import lru_cache
 from src.config import config
 from src.infras.chunking.base import BaseChunker
 from src.infras.chunking.provider.semantic_node import SemanticNodeChunker
+from src.infras.chunking.provider.markdown import MarkdownChunker
+from src.infras.chunking.provider.recursive import RecursiveChunker
 from src.infras.embedding.factory import EmbeddingFactory
 
 class ChunkerFactory:
     _providers = {
         "semantic_node": SemanticNodeChunker,
+        "markdown": MarkdownChunker,
+        "recursive": RecursiveChunker,
     }
 
     @classmethod
