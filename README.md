@@ -1,4 +1,4 @@
-- Intelligent Multi-Agent Chatbot LLM System
+# Intelligent Multi-Agent Chatbot LLM System
 
 ArcFusion is an advanced multi-agent LLM system built with LangGraph that intelligently routes user queries through specialized agents, performs autonomous retrieval (RAG, Web Search, or Hybrid), and synthesizes high-quality responses with self-assessment and replanning capabilities.
 
